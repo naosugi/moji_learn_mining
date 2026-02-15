@@ -1,11 +1,21 @@
-// Global memory-based state (resets on page reload)
-window.gameState = {
+// Global memory-based state, initialized from localStorage if available
+const savedState = (() => {
+    try {
+        const raw = localStorage.getItem('mojilearn_state');
+        return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+        return null;
+    }
+})();
+
+window.gameState = savedState || {
     castleLevel: 1,
     animals: [],
     floraCount: 0,
-    winCount: 0, // Track total wins for long-term rewards like Rainbow
-    mysteryEggState: 0, // 0: new, 1: cracking, 2: hatched
-    collectedHiragana: [] // List of unique characters found
+    winCount: 0,
+    mysteryEggState: 0,
+    collectedHiragana: [],
+    eggsHatched: 0
 };
 
 const Utils = {
@@ -38,6 +48,12 @@ const Utils = {
 
     saveData: (key, value) => {
         window.gameState[key] = value;
+        // Persist to localStorage
+        try {
+            localStorage.setItem('mojilearn_state', JSON.stringify(window.gameState));
+        } catch (e) {
+            // Storage full or unavailable — silently fail
+        }
     },
 
     getData: () => {

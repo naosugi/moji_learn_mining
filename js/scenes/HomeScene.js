@@ -130,7 +130,7 @@ class HomeScene extends Phaser.Scene {
             this.createTapSparkle(pointer.worldX, pointer.worldY);
         });
 
-        this.input.on('pointermove', function (p) {
+        this.input.on('pointermove', (p) => {
             if (!p.isDown) return;
             this.cameras.main.scrollX -= (p.x - p.prevPosition.x) / this.cameras.main.zoom;
             this.cameras.main.scrollY -= (p.y - p.prevPosition.y) / this.cameras.main.zoom;
@@ -177,7 +177,7 @@ class HomeScene extends Phaser.Scene {
         const debugContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(2000);
 
         const buttons = [
-            { text: 'RESET', color: '#ff0000', action: () => { localStorage.clear(); location.reload(); } },
+            { text: 'RESET', color: '#ff0000', action: () => { localStorage.removeItem('mojilearn_state'); localStorage.clear(); location.reload(); } },
             {
                 text: 'WIN++', color: '#00ff00', action: () => {
                     const d = Utils.getData();
@@ -363,8 +363,9 @@ class HomeScene extends Phaser.Scene {
     }
 
     createRainbow() {
+        const data = Utils.getData();
         const colors = [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082, 0x9400D3];
-        const alpha = Math.min(0.1 + (data.winCount - 3) * 0.1, 0.6);
+        const alpha = Math.min(0.1 + ((data.winCount || 0) - 3) * 0.1, 0.6);
 
         const rb = this.add.graphics();
         rb.setAlpha(alpha);
@@ -459,11 +460,8 @@ class HomeScene extends Phaser.Scene {
         }
 
         // --- HATCHING MOMENT ---
-        // If we just hit 5 wins (progress 0 BUT winCount > 0), trigger hatch!
-        // We use a local state check or just check if it should hatch now
-        // Simplification: Tap to hatch if ready?
-
-        let isReadyToHatch = (progress === 0 && data.winCount > 0 && state === 0);
+        // Hatch when effectiveWins >= 5 (progress >= 5)
+        let isReadyToHatch = (progress >= 5);
 
         if (isReadyToHatch) {
             scale = 1.4;

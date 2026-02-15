@@ -101,7 +101,7 @@ class HomeScene extends Phaser.Scene {
         this.createNature();
 
         // --- 4. Castle ---
-        const baseLevel = data.castleLevel || 1;
+        const baseLevel = data.castleLevel;
         // Move castle slightly down into the ground
         this.createCastle(1000, 1580, baseLevel, isNight);
 
@@ -116,9 +116,7 @@ class HomeScene extends Phaser.Scene {
             });
         }
 
-        if (!data.animals || data.animals.length === 0) {
-            this.createAnimal(900, 1680, '🐕', isNight);
-        }
+
 
         // Camera
         this.cameras.main.startFollow(this.castlePoint);
@@ -177,11 +175,11 @@ class HomeScene extends Phaser.Scene {
         const debugContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(2000);
 
         const buttons = [
-            { text: 'RESET', color: '#ff0000', action: () => { location.reload(); } },
+            { text: 'RESET', color: '#ff0000', action: () => { Utils.resetData(); location.reload(); } },
             {
                 text: 'WIN++', color: '#00ff00', action: () => {
                     const d = Utils.getData();
-                    d.winCount = (d.winCount || 0) + 1;
+                    d.winCount = d.winCount + 1;
                     Utils.saveData('winCount', d.winCount);
                     this.scene.restart();
                 }
@@ -189,7 +187,7 @@ class HomeScene extends Phaser.Scene {
             {
                 text: 'HATCH', color: '#ffff00', action: () => {
                     const d = Utils.getData();
-                    const cycleStart = (d.eggsHatched || 0) * 5;
+                    const cycleStart = d.eggsHatched * 5;
                     d.winCount = cycleStart + 4;
                     Utils.saveData('winCount', d.winCount);
                     this.scene.restart();
@@ -275,7 +273,7 @@ class HomeScene extends Phaser.Scene {
         this.collectionGroup.add(title);
 
         const data = Utils.getData();
-        const collected = data.collectedHiragana || [];
+        const collected = data.collectedHiragana;
         const uniqueChars = [...new Set(collected)].sort();
 
         // Calculate pages
@@ -365,7 +363,7 @@ class HomeScene extends Phaser.Scene {
     createRainbow() {
         const data = Utils.getData();
         const colors = [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082, 0x9400D3];
-        const alpha = Math.min(0.1 + ((data.winCount || 0) - 3) * 0.1, 0.6);
+        const alpha = Math.min(0.1 + (data.winCount - 3) * 0.1, 0.6);
 
         const rb = this.add.graphics();
         rb.setAlpha(alpha);
@@ -414,12 +412,12 @@ class HomeScene extends Phaser.Scene {
 
     createMysteryEgg() {
         const data = Utils.getData();
-        const eggsHatched = data.eggsHatched || 0;
+        const eggsHatched = data.eggsHatched;
 
         // Progress for CURRENT egg
         // e.g. 1st egg: wins 0-5. 2nd egg: wins 5-10.
         // Effective wins for this egg = totalWins - (eggsHatched * 5)
-        let effectiveWins = (data.winCount || 0) - (eggsHatched * 5);
+        let effectiveWins = data.winCount - (eggsHatched * 5);
 
         // Safety cap if win count is low (shouldn't happen with correct logic but safe)
         if (effectiveWins < 0) effectiveWins = 0;
@@ -531,12 +529,12 @@ class HomeScene extends Phaser.Scene {
 
         // Add to permanent collection
         const data = Utils.getData();
-        if (!data.animals) data.animals = [];
-        data.animals.push(creatureChar);
+
+        data.animals.push(creatureKey);
 
         // Update egg state to 'hatched' for this cycle, or increment 'eggsHatched'
         // For simplicity: increment a 'eggsHatched' counter to offset future winCounts
-        data.eggsHatched = (data.eggsHatched || 0) + 1;
+        data.eggsHatched = data.eggsHatched + 1;
         Utils.saveData('eggsHatched', data.eggsHatched);
         Utils.saveData('animals', data.animals);
 
@@ -559,7 +557,7 @@ class HomeScene extends Phaser.Scene {
 
     createNature() {
         const data = Utils.getData();
-        const floraCount = data.floraCount || 0;
+        const floraCount = data.floraCount;
         const totalToSpawn = 2 + floraCount; // Start even smaller
         const items = ['🌲', '🌳', '🌷', '🌻', '🌼', '🍀', '🍓'];
 

@@ -186,13 +186,11 @@ class SearchScene extends Phaser.Scene {
 
         // Save progress (Level up castle, add animal, or add nature)
         const currentData = Utils.getData();
-        currentData.winCount = (currentData.winCount || 0) + 1;
+        currentData.winCount = currentData.winCount + 1;
         Utils.saveData('winCount', currentData.winCount);
 
         // Add to collected list
-        if (!currentData.collectedHiragana) {
-            currentData.collectedHiragana = [];
-        }
+
         if (!currentData.collectedHiragana.includes(this.targetHiragana.char)) {
             currentData.collectedHiragana.push(this.targetHiragana.char);
             Utils.saveData('collectedHiragana', currentData.collectedHiragana);
@@ -201,21 +199,21 @@ class SearchScene extends Phaser.Scene {
         let message = "";
 
         // Cycle between 3 reward types
-        const rewardType = ((currentData.castleLevel || 0) + (currentData.animals ? currentData.animals.length : 0) + (currentData.floraCount / 5)) % 3;
+        const rewardType = (currentData.castleLevel + currentData.animals.length + (currentData.floraCount / 5)) % 3;
 
         if (rewardType < 1) {
-            currentData.castleLevel = (currentData.castleLevel || 1) + 1;
+            currentData.castleLevel = currentData.castleLevel + 1;
             Utils.saveData('castleLevel', currentData.castleLevel);
             message = "おうちが大きくなったよ！";
         } else if (rewardType < 2) {
             const animals = ['🐕', '🐈', '🐇', '🐘', '🦒', '🐎', '🐒', '🐅', '🦓', '🐪'];
             const newAnimal = Phaser.Math.RND.pick(animals);
-            if (!currentData.animals) currentData.animals = [];
+
             currentData.animals.push(newAnimal);
             Utils.saveData('animals', currentData.animals);
             message = "ともだちが遊びにきたよ！";
         } else {
-            currentData.floraCount = (currentData.floraCount || 0) + 5;
+            currentData.floraCount = currentData.floraCount + 5;
             Utils.saveData('floraCount', currentData.floraCount);
             message = "おはなが増えたよ！";
         }

@@ -1,7 +1,7 @@
-// Global memory-based state (resets on page reload by design)
-window.gameState = {
+// Single source of truth for initial game state
+const INITIAL_STATE = {
     castleLevel: 1,
-    animals: [],
+    animals: ['🐕'],
     floraCount: 0,
     winCount: 0,
     mysteryEggState: 0,
@@ -9,14 +9,19 @@ window.gameState = {
     eggsHatched: 0
 };
 
+// Deep copy to avoid mutation of the constant
+window.gameState = JSON.parse(JSON.stringify(INITIAL_STATE));
+
 const Utils = {
+    resetData: () => {
+        window.gameState = JSON.parse(JSON.stringify(INITIAL_STATE));
+    },
+
     speak: (text) => {
         if (!window.speechSynthesis) return;
 
-        // Stop any current speech
         window.speechSynthesis.cancel();
 
-        // Duck BGM volume
         if (window.audioController) window.audioController.duck();
 
         const utterance = new SpeechSynthesisUtterance(text);
@@ -31,7 +36,6 @@ const Utils = {
             if (window.audioController) window.audioController.unduck();
         };
 
-        // Extra workaround for iOS: calling speak with a very short delay
         setTimeout(() => {
             window.speechSynthesis.speak(utterance);
         }, 50);

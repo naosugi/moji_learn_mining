@@ -25,11 +25,8 @@ document.getElementById('start-button').addEventListener('click', () => {
     // Initialize game only after user interaction
     const game = new Phaser.Game(config);
 
-    // Initial dummy speech to unlock audio on iOS
-    if ('speechSynthesis' in window) {
-        const utter = new SpeechSynthesisUtterance('');
-        window.speechSynthesis.speak(utter);
-    }
+    // Initial speech to unlock audio on iOS
+    Utils.speak('はじまるよ！');
 
     // Resume AudioContext
     window.audioController.resume();

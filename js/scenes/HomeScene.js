@@ -3,13 +3,16 @@ class HomeScene extends Phaser.Scene {
         super('HomeScene');
     }
 
-    create() {
+    create(params) {
         if (window.audioController) window.audioController.playBGM();
         const data = Utils.getData();
 
         // --- 0. Day/Night Cycle ---
-        // 20% chance of Night Mode, or based on real time? Let's do random for variety
-        const isNight = Math.random() < 0.2;
+        // 20% chance of Night Mode, unless forced
+        let isNight = Math.random() < 0.2;
+        if (params && params.forceNight !== undefined) {
+            isNight = params.forceNight;
+        }
 
         // --- 1. Environmental Atmosphere (Gradient Sky) ---
         const sky = this.add.graphics();
@@ -118,6 +121,17 @@ class HomeScene extends Phaser.Scene {
             this.toggleCollection();
         });
 
+        // --- 8. DEBUG MODE (Hidden: Tap Top-Left 5 times) ---
+        this.debugTaps = 0;
+        const debugZone = this.add.rectangle(50, 50, 100, 100, 0x000000, 0.01).setInteractive();
+        debugZone.on('pointerdown', () => {
+            this.debugTaps++;
+            if (this.debugTaps >= 5) {
+                this.toggleDebugMenu();
+                this.debugTaps = 0;
+            }
+        });
+
         // Transition logic (Castle area)
         this.castleContainer.setInteractive(new Phaser.Geom.Rectangle(-120, -200, 240, 250), Phaser.Geom.Rectangle.Contains);
         this.castleContainer.on('pointerdown', (p, x, y, event) => {
@@ -127,6 +141,70 @@ class HomeScene extends Phaser.Scene {
             this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
                 this.scene.start('SearchScene');
             });
+        });
+    }
+
+    toggleDebugMenu() {
+        if (this.isDebugOpen) {
+            this.debugGroup.destroy(true);
+            this.isDebugOpen = false;
+            return;
+        }
+        this.isDebugOpen = true;
+        this.debugGroup = this.add.group();
+
+        const bg = this.add.rectangle(1000, 1000, 800, 1200, 0x000000, 0.9);
+        this.debugGroup.add(bg);
+
+        const title = this.add.text(1000, 450, 'DEBUG MENU', { fontSize: '60px', color: '#0f0' }).setOrigin(0.5);
+        this.debugGroup.add(title);
+
+        const buttons = [
+            { text: 'Reset Data', action: () => { localStorage.clear(); location.reload(); } },
+            {
+                text: '+5 Wins (Hatch Ready)', action: () => {
+                    const d = Utils.getData();
+                    d.winCount = (d.winCount || 0) + 5;
+                    Utils.saveData('winCount', d.winCount);
+                    this.scene.restart();
+                }
+            },
+            {
+                text: 'Set Night Mode', action: () => {
+                    // Force night via hacky reload with param? Or just restart scene with flag?
+                    // Ideally restart( { forceNight: true } )
+                    this.scene.restart({ forceNight: true });
+                }
+            },
+            {
+                text: 'Set Day Mode', action: () => {
+                    this.scene.restart({ forceNight: false });
+                }
+            },
+            {
+                text: 'Unlock All Hiragana', action: () => {
+                    const d = Utils.getData();
+                    d.collectedHiragana = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と', 'な', 'に', 'ぬ', 'ね', 'の', 'は', 'ひ', 'ふ', 'へ', 'ほ', 'ま', 'み', 'む', 'め', 'も', 'や', 'ゆ', 'よ', 'ら', 'り', 'る', 'れ', 'ろ', 'わ', 'を', 'ん'];
+                    Utils.saveData('collectedHiragana', d.collectedHiragana);
+                    Utils.speak('全部覚えたよ');
+                }
+            },
+            {
+                text: 'Spawn Rare Animal', action: () => {
+                    this.spawnRareCreature(1000, 1600);
+                }
+            },
+            { text: 'Close', action: () => { this.toggleDebugMenu(); } }
+        ];
+
+        buttons.forEach((btn, index) => {
+            const b = this.add.text(1000, 600 + index * 120, btn.text, { fontSize: '40px', backgroundColor: '#333', padding: { x: 20, y: 10 } })
+                .setOrigin(0.5)
+                .setInteractive();
+            b.on('pointerdown', () => {
+                btn.action();
+            });
+            this.debugGroup.add(b);
         });
     }
 

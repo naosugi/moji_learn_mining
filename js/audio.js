@@ -5,7 +5,16 @@ class AudioController {
         this.isMuted = false;
         this.masterGain = this.ctx.createGain();
         this.masterGain.connect(this.ctx.destination);
-        this.masterGain.gain.value = 0.3; // Global volume
+        this.masterGain.gain.value = 0.15; // Lower global volume to not drown out speech
+        this.defaultVolume = 0.15;
+    }
+
+    duck() {
+        this.masterGain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.2);
+    }
+
+    unduck() {
+        this.masterGain.gain.setTargetAtTime(this.defaultVolume, this.ctx.currentTime, 0.5);
     }
 
     resume() {

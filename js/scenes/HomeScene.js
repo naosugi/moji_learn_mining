@@ -17,9 +17,10 @@ class HomeScene extends Phaser.Scene {
         // Add soft hills for ground
         const ground = this.add.graphics();
         ground.fillStyle(0x90EE90, 1);
-        ground.fillEllipse(1000, 1800, 2500, 600); // Main hill
-        ground.fillEllipse(200, 1750, 1000, 400);  // Small hill left
-        ground.fillEllipse(1800, 1750, 1000, 400); // Small hill right
+        // Larger, flatter ellipses for better grounding
+        ground.fillEllipse(1000, 1850, 3000, 700);
+        ground.fillEllipse(300, 1800, 1200, 400);
+        ground.fillEllipse(1700, 1800, 1200, 400);
 
         // --- 2. Floating Clouds & Rainbow ---
         if (data.winCount >= 3) {
@@ -32,7 +33,8 @@ class HomeScene extends Phaser.Scene {
 
         // --- 4. Castle ---
         const baseLevel = data.castleLevel || 1;
-        this.createCastle(1000, 1530, baseLevel);
+        // Move castle slightly down into the ground
+        this.createCastle(1000, 1580, baseLevel);
 
         // --- 5. Particles (Pollen/Light) ---
         this.createAtmosphereParticles();
@@ -41,12 +43,12 @@ class HomeScene extends Phaser.Scene {
         this.animals = this.physics.add.group();
         if (data.animals) {
             data.animals.forEach((animalType) => {
-                this.createAnimal(1000 + (Math.random() - 0.5) * 1200, 1650 + (Math.random() - 0.5) * 150, animalType);
+                this.createAnimal(1000 + (Math.random() - 0.5) * 1200, 1680 + (Math.random() - 0.5) * 100, animalType);
             });
         }
 
         if (!data.animals || data.animals.length === 0) {
-            this.createAnimal(900, 1600, '🐕');
+            this.createAnimal(900, 1680, '🐕');
         }
 
         // Camera
@@ -132,12 +134,12 @@ class HomeScene extends Phaser.Scene {
     createNature() {
         const data = Utils.getData();
         const floraCount = data.floraCount || 0;
-        const totalToSpawn = 6 + floraCount;
+        const totalToSpawn = 2 + floraCount; // Start even smaller
         const items = ['🌲', '🌳', '🌷', '🌻', '🌼', '🍀', '🍓'];
 
         for (let i = 0; i < totalToSpawn; i++) {
             const x = Math.random() * 2000;
-            const y = 1530 + Math.random() * 300;
+            const y = 1580 + Math.random() * 250;
             const item = this.add.text(x, y, Phaser.Math.RND.pick(items), { fontSize: '56px' }).setOrigin(0.5, 1);
             item.setInteractive();
             item.setDepth(y); // Pseudo-3D
@@ -185,9 +187,9 @@ class HomeScene extends Phaser.Scene {
         this.castlePoint = this.add.circle(x, y, 5, 0xff0000).setVisible(false);
 
         const graphics = this.add.graphics();
-        // Shadow
-        graphics.fillStyle(0x000000, 0.1);
-        graphics.fillEllipse(0, 0, 200, 40);
+        // Visible shadow for depth
+        graphics.fillStyle(0x000000, 0.15);
+        graphics.fillEllipse(0, -5, 220, 50);
 
         graphics.fillStyle(0xE0E0E0, 1);
         graphics.fillRect(-60, -120, 120, 120);

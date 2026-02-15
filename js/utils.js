@@ -10,14 +10,28 @@ const Utils = {
     speak: (text) => {
         if (!window.speechSynthesis) return;
 
-        // Basic speech setup for iPad compatibility
+        // Stop any current speech
         window.speechSynthesis.cancel();
+
+        // Duck BGM volume
+        if (window.audioController) window.audioController.duck();
+
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'ja-JP';
         utterance.rate = 1.0;
 
-        // Don't wait for voices, just speak with defaults for maximal simplicity
-        window.speechSynthesis.speak(utterance);
+        utterance.onend = () => {
+            if (window.audioController) window.audioController.unduck();
+        };
+
+        utterance.onerror = () => {
+            if (window.audioController) window.audioController.unduck();
+        };
+
+        // Extra workaround for iOS: calling speak with a very short delay
+        setTimeout(() => {
+            window.speechSynthesis.speak(utterance);
+        }, 50);
     },
 
     saveData: (key, value) => {

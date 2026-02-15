@@ -152,32 +152,42 @@ class HomeScene extends Phaser.Scene {
 
     createMysteryEgg() {
         const data = Utils.getData();
-        const state = data.mysteryEggState || 0;
+        const eggsHatched = data.eggsHatched || 0;
 
-        // If hatched, no egg anymore (the creature would be in animals list)
-        if (state >= 2) return;
+        // Progress for CURRENT egg
+        // e.g. 1st egg: wins 0-5. 2nd egg: wins 5-10.
+        // Effective wins for this egg = totalWins - (eggsHatched * 5)
+        let effectiveWins = (data.winCount || 0) - (eggsHatched * 5);
 
-        // Egg appearance changes based on progress towards next hatch
-        // Let's say hatch happens at winCount = 5
-        const progress = data.winCount % 5;
+        // Safety cap if win count is low (shouldn't happen with correct logic but safe)
+        if (effectiveWins < 0) effectiveWins = 0;
+
+        // Hatch happens when effectiveWins >= 5
+        let progress = effectiveWins;
 
         const eggX = 1300;
         const eggY = 1600;
 
         let scale = 1.0;
-        let rotation = 0;
-
-        // If close to hatching (4 wins), make it wobble and bigger
-        if (progress >= 3) {
-            scale = 1.2;
-        }
 
         const egg = this.add.text(eggX, eggY, '🥚', { fontSize: '100px' }).setOrigin(0.5, 1);
         egg.setScale(scale);
         egg.setInteractive();
 
+        // If close to hatching (4 wins), make it wobble and bigger
+        if (progress === 4) {
+            scale = 1.3;
+            this.tweens.add({
+                targets: egg,
+                angle: { from: -10, to: 10 },
+                duration: 120, // Fast wobble!
+                yoyo: true,
+                repeat: -1
+            });
+        }
+
         // Wobble animation if close to hatching
-        if (progress >= 1) {
+        if (progress >= 1 && progress < 4) {
             this.tweens.add({
                 targets: egg,
                 angle: { from: -5, to: 5 },
@@ -187,24 +197,87 @@ class HomeScene extends Phaser.Scene {
             });
         }
 
-        egg.on('pointerdown', () => {
-            // Shake heavily on tap
-            window.audioController.playSE('shake');
-            this.tweens.add({
-                targets: egg,
-                scaleX: 1.4,
-                scaleY: 0.8,
-                duration: 100,
-                yoyo: true,
-                onComplete: () => {
-                    // Slight possibility of "hint" sound?
-                    if (progress >= 4) {
-                        Utils.speak('もうすぐうまれるよ！');
-                    } else {
-                        Utils.speak('なにがうまれるかな？');
-                    }
-                }
+        // --- HATCHING MOMENT ---
+        // If we just hit 5 wins (progress 0 BUT winCount > 0), trigger hatch!
+        // We use a local state check or just check if it should hatch now
+        // Simplification: Tap to hatch if ready?
+
+        let isReadyToHatch = (progress === 0 && data.winCount > 0 && state === 0);
+
+        if (isReadyToHatch) {
+            scale = 1.4;
+            egg.setText('🥚✨'); // Mark as special
+
+            // Auto hatch animation sequence on tap
+            egg.off('pointerdown');
+            egg.on('pointerdown', () => {
+                this.hatchEgg(egg);
             });
+        } else {
+            // Normal tap behavior
+            egg.on('pointerdown', () => {
+                window.audioController.playSE('shake');
+                this.tweens.add({
+                    targets: egg,
+                    scaleX: scale * 1.2,
+                    scaleY: scale * 0.8,
+                    duration: 100,
+                    yoyo: true,
+                    onComplete: () => {
+                        if (progress === 4) {
+                            Utils.speak('もうすぐうまれるよ！');
+                        } else {
+                            Utils.speak('なにがうまれるかな？');
+                        }
+                    }
+                });
+            });
+        }
+    }
+
+    hatchEgg(egg) {
+        window.audioController.playSE('correct'); // Fanfare
+        Utils.speak('やったー！うまれたよ！');
+
+        this.tweens.add({
+            targets: egg,
+            scale: 2.0,
+            alpha: 0,
+            duration: 1000,
+            onComplete: () => {
+                egg.destroy();
+                this.spawnRareCreature(1300, 1600);
+            }
+        });
+    }
+
+    spawnRareCreature(x, y) {
+        // Rare animals
+        const rares = ['🦄', '🐉', '🦖', '🦚', '🧚'];
+        const creatureChar = Phaser.Math.RND.pick(rares);
+
+        const creature = this.add.text(x, y, creatureChar, { fontSize: '100px' }).setOrigin(0.5);
+        this.physics.add.existing(creature);
+        creature.body.setVelocity(0, -200); // Jump up!
+        creature.body.gravity.y = 500;
+        creature.setInteractive();
+
+        // Add to permanent collection
+        const data = Utils.getData();
+        if (!data.animals) data.animals = [];
+        data.animals.push(creatureChar);
+
+        // Update egg state to 'hatched' for this cycle, or increment 'eggsHatched'
+        // For simplicity: increment a 'eggsHatched' counter to offset future winCounts
+        data.eggsHatched = (data.eggsHatched || 0) + 1;
+        Utils.saveData('eggsHatched', data.eggsHatched);
+        Utils.saveData('animals', data.animals);
+
+        // Creature behavior
+        creature.on('pointerdown', () => {
+            window.audioController.playSE('jump');
+            creature.body.setVelocityY(-350);
+            Utils.speak('こんにちは！');
         });
     }
 

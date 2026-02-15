@@ -513,14 +513,15 @@ class HomeScene extends Phaser.Scene {
     }
 
     spawnRareCreature(x, y) {
-        // Rare animals
-        const rares = ['🦄', '🐉', '🦖', '🦚', '🧚'];
-        const creatureChar = Phaser.Math.RND.pick(rares);
+        // Rare animals (Image Keys)
+        const rares = ['unicorn', 'dragon', 'trex', 'peacock'];
+        const creatureKey = Phaser.Math.RND.pick(rares);
 
         // Adjust spawn to be lower so it pops up from the egg better
         const spawnY = y + 50;
 
-        const creature = this.add.text(x, spawnY, creatureChar, { fontSize: '100px' }).setOrigin(0.5);
+        const creature = this.add.image(x, spawnY, creatureKey).setOrigin(0.5);
+        creature.setDisplaySize(150, 150); // Consistent size
         this.physics.add.existing(creature);
         creature.body.setVelocity(0, -600); // Higher jump!
         creature.body.gravity.y = 800; // Heavier gravity for better feel
@@ -544,6 +545,15 @@ class HomeScene extends Phaser.Scene {
             window.audioController.playSE('jump');
             creature.body.setVelocityY(-450);
             Utils.speak('こんにちは！');
+
+            // Simple squash animation for sprite
+            this.tweens.add({
+                targets: creature,
+                scaleX: creature.scaleX * 1.2,
+                scaleY: creature.scaleY * 0.8,
+                duration: 100,
+                yoyo: true
+            });
         });
     }
 
@@ -639,26 +649,25 @@ class HomeScene extends Phaser.Scene {
             graphics.strokeTriangle(50, -80, 150, -80, 100, -140);
         }
         if (level >= 4) {
-            graphics.fillStyle(isNight ? 0xFFEA00 : 0xFFFF00, 1); // Brighter yellow at night
-            graphics.fillRect(-35, -95, 25, 30);
-            graphics.fillRect(10, -95, 25, 30);
+            // Replace simple yellow roof with fancy image
+            const roof = this.add.image(0, -180, 'castle_roof').setOrigin(0.5);
+            roof.setDisplaySize(180, 150);
+            this.castleContainer.add(roof);
         }
         if (level >= 5) {
-            graphics.lineStyle(5, 0x424242, 1);
-            graphics.lineBetween(0, -210, 0, -270);
-            graphics.fillStyle(0xFFFF00, 1);
-            graphics.fillTriangle(0, -270, 50, -245, 0, -220);
-            graphics.strokeTriangle(0, -270, 50, -245, 0, -220);
-
-            // Animated flag text
-            const flag = this.add.text(25, -260, '🚩', { fontSize: '40px' }).setOrigin(0.5);
+            // Animated flag image
+            const flag = this.add.image(25, -280, 'castle_flag').setOrigin(0.5);
+            flag.setDisplaySize(100, 80);
             this.castleContainer.add(flag);
+
             this.tweens.add({
                 targets: flag,
-                scaleX: 0.8,
-                duration: 300,
+                scaleX: 0.9,
+                angle: 5,
+                duration: 600,
                 yoyo: true,
-                repeat: -1
+                repeat: -1,
+                ease: 'Sine.easeInOut'
             });
         }
 
@@ -716,14 +725,22 @@ class HomeScene extends Phaser.Scene {
         });
     }
 
-    createAnimal(x, y, emoji, isNight = false) {
-        const animal = this.add.text(x, y, emoji, { fontSize: '72px' }).setOrigin(0.5);
+    createAnimal(x, y, type, isNight = false) {
+        let animal;
+        const isSprite = ['unicorn', 'dragon', 'trex', 'peacock'].includes(type);
+
+        if (isSprite) {
+            animal = this.add.image(x, y, type).setOrigin(0.5);
+            animal.setDisplaySize(120, 120);
+        } else {
+            animal = this.add.text(x, y, type, { fontSize: '72px' }).setOrigin(0.5);
+        }
         this.physics.add.existing(animal);
         animal.setInteractive();
         animal.setDepth(y);
 
         // Movement logic
-        if (isNight && ['🦄', '🐉', '🧚'].includes(emoji)) {
+        if (isNight && (type === 'dragon' || type === 'unicorn' || type === 'peacock')) {
             // Flying creatures at night
             animal.body.allowGravity = false;
             this.tweens.add({

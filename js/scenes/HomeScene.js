@@ -4,65 +4,126 @@ class HomeScene extends Phaser.Scene {
     }
 
     create() {
-        // Background color (grass/sky feel)
-        this.cameras.main.setBackgroundColor('#87CEEB');
+        // --- 1. Environmental Atmosphere (Gradient Sky) ---
+        // Create a large rectangle for the sky gradient (simulated with Graphics)
+        const sky = this.add.graphics();
+        sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xB0E0E6, 0xB0E0E6, 1);
+        sky.fillRect(0, 0, 2000, 1500);
 
-        // Create a large world bounds for scrolling
         this.physics.world.setBounds(0, 0, 2000, 2000);
         this.cameras.main.setBounds(0, 0, 2000, 2000);
 
-        // Add some ground/grass
-        const ground = this.add.rectangle(1000, 1500, 2000, 1000, 0x90EE90); // LightGreen
+        // Add ground
+        this.add.rectangle(1000, 1750, 2000, 500, 0x90EE90); // LightGreen ground
+
+        // --- 2. Floating Clouds ---
+        this.createClouds();
+
+        // --- 3. Nature (Trees and Flowers) ---
+        this.createNature();
 
         // Load data
         const data = Utils.getData();
         const baseLevel = data.castleLevel || 1;
 
-        // Draw Castle based on level
-        this.createCastle(1000, 1000, baseLevel);
+        // Draw Castle
+        this.createCastle(1000, 1400, baseLevel);
+
+        // --- 4. Particles (Pollen/Light) ---
+        this.createAtmosphereParticles();
 
         // Add animals
         this.animals = this.physics.add.group();
         if (data.animals) {
-            data.animals.forEach((animalType, index) => {
-                // Spread them out a bit
-                this.createAnimal(1000 + (Math.random() - 0.5) * 500, 1200 + (Math.random() - 0.5) * 300, animalType);
+            data.animals.forEach((animalType) => {
+                this.createAnimal(1000 + (Math.random() - 0.5) * 800, 1550 + (Math.random() - 0.5) * 200, animalType);
             });
         }
 
-        // Debug animal for testing if none exist
         if (!data.animals || data.animals.length === 0) {
-            this.createAnimal(900, 1200, '🐕');
+            this.createAnimal(900, 1550, '🐕');
         }
 
         // Camera controls
         this.cameras.main.startFollow(this.castlePoint);
         this.cameras.main.setZoom(1);
 
-        // Input for camera drag (swipe)
         this.input.on('pointermove', function (p) {
             if (!p.isDown) return;
             this.cameras.main.scrollX -= (p.x - p.prevPosition.x) / this.cameras.main.zoom;
             this.cameras.main.scrollY -= (p.y - p.prevPosition.y) / this.cameras.main.zoom;
         });
 
-        // Pinch zoom (simplified logic for touch, Phaser handles pointer events)
-        this.input.addPointer(1); // Ensure multi-touch is enabled
+        this.input.addPointer(1);
 
-        // Transition to Search Mode on Castle Click
-        this.castleContainer.setInteractive(new Phaser.Geom.Rectangle(-100, -100, 200, 200), Phaser.Geom.Rectangle.Contains);
+        // Transition logic
+        this.castleContainer.setInteractive(new Phaser.Geom.Rectangle(-120, -200, 240, 250), Phaser.Geom.Rectangle.Contains);
         this.castleContainer.on('pointerdown', () => {
-            this.cameras.main.fadeOut(500, 0, 0, 0);
-            this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, (cam, effect) => {
+            window.audioController.playSE('sparkle');
+            this.cameras.main.fadeOut(500, 255, 255, 255);
+            this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
                 this.scene.start('SearchScene');
             });
         });
+    }
 
-        // BGM (Mock for now, loop nice calm music)
-        // this.sound.play('bgm', { loop: true }); 
+    createClouds() {
+        for (let i = 0; i < 8; i++) {
+            const x = Math.random() * 2000;
+            const y = 100 + Math.random() * 400;
+            const cloud = this.add.text(x, y, '☁️', { fontSize: (64 + Math.random() * 64) + 'px' }).setAlpha(0.6);
+
+            // Slow drift
+            this.tweens.add({
+                targets: cloud,
+                x: x + 100,
+                duration: 5000 + Math.random() * 5000,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        }
+    }
+
+    createNature() {
+        const items = ['🌲', '🌳', '🌷', '🌻', '🌼'];
+        for (let i = 0; i < 30; i++) {
+            const x = Math.random() * 2000;
+            const y = 1500 + Math.random() * 400;
+            const item = this.add.text(x, y, Phaser.Math.RND.pick(items), { fontSize: '48px' }).setOrigin(0.5, 1);
+            item.setInteractive();
+
+            item.on('pointerdown', () => {
+                window.audioController.playSE('shake');
+                this.tweens.add({
+                    targets: item,
+                    angle: { from: -10, to: 10 },
+                    duration: 100,
+                    yoyo: true,
+                    repeat: 3
+                });
+            });
+        }
+    }
+
+    createAtmosphereParticles() {
+        // Subtle floating lights
+        for (let i = 0; i < 20; i++) {
+            const p = this.add.circle(Math.random() * 2000, Math.random() * 2000, 2, 0xffffff, 0.4);
+            this.tweens.add({
+                targets: p,
+                y: '-=50',
+                x: '+=20',
+                alpha: 0,
+                duration: 3000 + Math.random() * 3000,
+                repeat: -1,
+                delay: Math.random() * 5000
+            });
+        }
     }
 
     createCastle(x, y, level) {
+        // ... (Keep existing castle logic, just adjust interactive area if needed)
         this.castleContainer = this.add.container(x, y);
         this.castlePoint = this.add.circle(x, y, 5, 0xff0000).setVisible(false);
 
@@ -135,25 +196,40 @@ class HomeScene extends Phaser.Scene {
     }
 
     createAnimal(x, y, emoji) {
-        // Map face emojis to full body if needed
-        const emojiMap = {
-            '🐶': '🐕',
-            '🐱': '🐈',
-            '🐰': '🐇',
-            '🐼': '🐼', // Panda is already full mostly
-            '🐨': '🐨',
-            '🐯': '🐅'
-        };
+        const emojiMap = { '🐶': '🐕', '🐱': '🐈', '🐰': '🐇', '🐼': '🐼', '🐨': '🐨', '🐯': '🐅' };
         const fullEmoji = emojiMap[emoji] || emoji;
 
         const animal = this.add.text(x, y, fullEmoji, { fontSize: '64px' }).setOrigin(0.5);
         this.physics.add.existing(animal);
+        animal.setInteractive();
 
-        // Random movement logic
+        animal.on('pointerdown', () => {
+            window.audioController.playSE('jump');
+            this.tweens.add({
+                targets: animal,
+                y: animal.y - 100,
+                scaleX: 1.2,
+                scaleY: 1.2,
+                duration: 200,
+                yoyo: true,
+                onComplete: () => {
+                    // Show heart
+                    const heart = this.add.text(animal.x, animal.y - 80, '❤️', { fontSize: '32px' }).setOrigin(0.5);
+                    this.tweens.add({
+                        targets: heart,
+                        y: heart.y - 50,
+                        alpha: 0,
+                        duration: 800,
+                        onComplete: () => heart.destroy()
+                    });
+                }
+            });
+        });
+
         this.time.addEvent({
-            delay: 2000,
+            delay: 3000 + Math.random() * 2000,
             callback: () => {
-                const speed = 50;
+                const speed = 40;
                 const angle = Math.random() * Math.PI * 2;
                 animal.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
 

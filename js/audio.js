@@ -102,6 +102,31 @@ class AudioController {
                 osc.start(now);
                 osc.stop(now + 0.3);
                 break;
+
+            case 'jump':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.2);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+                break;
+
+            case 'shake':
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(100, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+                break;
+
+            case 'sparkle':
+                this.playTone(880, 0.05, 0, 'sine');
+                this.playTone(1320, 0.05, 0.05, 'sine');
+                this.playTone(1760, 0.05, 0.1, 'sine');
+                break;
         }
     }
 

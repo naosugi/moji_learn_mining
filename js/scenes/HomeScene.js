@@ -121,15 +121,13 @@ class HomeScene extends Phaser.Scene {
             this.toggleCollection();
         });
 
-        // --- 8. DEBUG MODE (Hidden: Tap Top-Left 5 times) ---
-        this.debugTaps = 0;
-        const debugZone = this.add.rectangle(50, 50, 100, 100, 0x000000, 0.01).setInteractive();
-        debugZone.on('pointerdown', () => {
-            this.debugTaps++;
-            if (this.debugTaps >= 5) {
-                this.toggleDebugMenu();
-                this.debugTaps = 0;
-            }
+        // --- 8. DEBUG MODE (Visible for testing) ---
+        const debugBtn = this.add.text(50, 50, '🐛', { fontSize: '60px' })
+            .setInteractive()
+            .setDepth(1000); // Top layer
+
+        debugBtn.on('pointerdown', () => {
+            this.toggleDebugMenu();
         });
 
         // Transition logic (Castle area)

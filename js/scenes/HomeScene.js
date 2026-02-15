@@ -4,49 +4,60 @@ class HomeScene extends Phaser.Scene {
     }
 
     create() {
+        const data = Utils.getData();
+
         // --- 1. Environmental Atmosphere (Gradient Sky) ---
-        // Create a large rectangle for the sky gradient (simulated with Graphics)
         const sky = this.add.graphics();
-        sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xB0E0E6, 0xB0E0E6, 1);
+        sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xE0F7FA, 0xE0F7FA, 1);
         sky.fillRect(0, 0, 2000, 1500);
 
         this.physics.world.setBounds(0, 0, 2000, 2000);
         this.cameras.main.setBounds(0, 0, 2000, 2000);
 
-        // Add ground
-        this.add.rectangle(1000, 1750, 2000, 500, 0x90EE90); // LightGreen ground
+        // Add soft hills for ground
+        const ground = this.add.graphics();
+        ground.fillStyle(0x90EE90, 1);
+        ground.fillEllipse(1000, 1800, 2500, 600); // Main hill
+        ground.fillEllipse(200, 1750, 1000, 400);  // Small hill left
+        ground.fillEllipse(1800, 1750, 1000, 400); // Small hill right
 
-        // --- 2. Floating Clouds ---
+        // --- 2. Floating Clouds & Rainbow ---
+        if (data.winCount >= 3) {
+            this.createRainbow();
+        }
         this.createClouds();
 
         // --- 3. Nature (Trees and Flowers) ---
         this.createNature();
 
-        // Load data
-        const data = Utils.getData();
+        // --- 4. Castle ---
         const baseLevel = data.castleLevel || 1;
+        this.createCastle(1000, 1530, baseLevel);
 
-        // Draw Castle
-        this.createCastle(1000, 1500, baseLevel);
-
-        // --- 4. Particles (Pollen/Light) ---
+        // --- 5. Particles (Pollen/Light) ---
         this.createAtmosphereParticles();
 
-        // Add animals
+        // --- 6. Animals ---
         this.animals = this.physics.add.group();
         if (data.animals) {
             data.animals.forEach((animalType) => {
-                this.createAnimal(1000 + (Math.random() - 0.5) * 800, 1650 + (Math.random() - 0.5) * 100, animalType);
+                this.createAnimal(1000 + (Math.random() - 0.5) * 1200, 1650 + (Math.random() - 0.5) * 150, animalType);
             });
         }
 
         if (!data.animals || data.animals.length === 0) {
-            this.createAnimal(900, 1650, '🐕');
+            this.createAnimal(900, 1600, '🐕');
         }
 
-        // Camera controls
+        // Camera
         this.cameras.main.startFollow(this.castlePoint);
         this.cameras.main.setZoom(1);
+
+        // Input
+        this.input.on('pointerdown', (pointer) => {
+            // Create sparkle at tap location
+            this.createTapSparkle(pointer.worldX, pointer.worldY);
+        });
 
         this.input.on('pointermove', function (p) {
             if (!p.isDown) return;
@@ -56,28 +67,61 @@ class HomeScene extends Phaser.Scene {
 
         this.input.addPointer(1);
 
-        // Transition logic
+        // Transition logic (Castle area)
         this.castleContainer.setInteractive(new Phaser.Geom.Rectangle(-120, -200, 240, 250), Phaser.Geom.Rectangle.Contains);
-        this.castleContainer.on('pointerdown', () => {
+        this.castleContainer.on('pointerdown', (p, x, y, event) => {
+            event.stopPropagation(); // Don't trigger world sparkle
             window.audioController.playSE('sparkle');
-            this.cameras.main.fadeOut(500, 255, 255, 255);
+            this.cameras.main.fadeOut(800, 255, 255, 255);
             this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
                 this.scene.start('SearchScene');
             });
         });
     }
 
-    createClouds() {
-        for (let i = 0; i < 8; i++) {
-            const x = Math.random() * 2000;
-            const y = 100 + Math.random() * 400;
-            const cloud = this.add.text(x, y, '☁️', { fontSize: (64 + Math.random() * 64) + 'px' }).setAlpha(0.6);
+    createRainbow() {
+        const data = Utils.getData();
+        const colors = [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082, 0x9400D3];
+        const alpha = Math.min(0.1 + (data.winCount - 3) * 0.1, 0.6);
 
-            // Slow drift
+        const rb = this.add.graphics();
+        rb.setAlpha(alpha);
+
+        for (let i = 0; i < colors.length; i++) {
+            rb.lineStyle(20, colors[i], 1);
+            rb.beginPath();
+            rb.arc(600, 1500, 800 + i * 20, Phaser.Math.DegToRad(200), Phaser.Math.DegToRad(340), false);
+            rb.strokePath();
+        }
+    }
+
+    createTapSparkle(x, y) {
+        window.audioController.playSE('pollen');
+        for (let i = 0; i < 5; i++) {
+            const sparkle = this.add.text(x, y, '✨', { fontSize: '24px' }).setOrigin(0.5);
+            this.physics.add.existing(sparkle);
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 100 + Math.random() * 100;
+            sparkle.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+            this.tweens.add({
+                targets: sparkle,
+                alpha: 0,
+                scale: 0.5,
+                duration: 600,
+                onComplete: () => sparkle.destroy()
+            });
+        }
+    }
+
+    createClouds() {
+        for (let i = 0; i < 10; i++) {
+            const x = Math.random() * 2000;
+            const y = 100 + Math.random() * 500;
+            const cloud = this.add.text(x, y, '☁️', { fontSize: (80 + Math.random() * 80) + 'px' }).setAlpha(0.6);
             this.tweens.add({
                 targets: cloud,
-                x: x + 100,
-                duration: 5000 + Math.random() * 5000,
+                x: x + (Math.random() > 0.5 ? 100 : -100),
+                duration: 8000 + Math.random() * 8000,
                 yoyo: true,
                 repeat: -1,
                 ease: 'Sine.easeInOut'
@@ -88,39 +132,48 @@ class HomeScene extends Phaser.Scene {
     createNature() {
         const data = Utils.getData();
         const floraCount = data.floraCount || 0;
-        const initialCount = 4; // Start with just a few elements
-        const totalToSpawn = initialCount + floraCount;
+        const totalToSpawn = 6 + floraCount;
+        const items = ['🌲', '🌳', '🌷', '🌻', '🌼', '🍀', '🍓'];
 
-        const items = ['🌲', '🌳', '🌷', '🌻', '🌼'];
         for (let i = 0; i < totalToSpawn; i++) {
             const x = Math.random() * 2000;
-            const y = 1500 + Math.random() * 250; // Place on the ground correctly
-            const item = this.add.text(x, y, Phaser.Math.RND.pick(items), { fontSize: '48px' }).setOrigin(0.5, 1);
+            const y = 1530 + Math.random() * 300;
+            const item = this.add.text(x, y, Phaser.Math.RND.pick(items), { fontSize: '56px' }).setOrigin(0.5, 1);
             item.setInteractive();
+            item.setDepth(y); // Pseudo-3D
 
-            item.on('pointerdown', () => {
+            item.on('pointerdown', (p, x, y, event) => {
+                event.stopPropagation();
                 window.audioController.playSE('shake');
                 this.tweens.add({
                     targets: item,
-                    angle: { from: -10, to: 10 },
+                    scaleY: 0.8,
+                    scaleX: 1.2,
                     duration: 100,
                     yoyo: true,
-                    repeat: 3
+                    onComplete: () => {
+                        this.tweens.add({
+                            targets: item,
+                            angle: { from: -15, to: 15 },
+                            duration: 80,
+                            yoyo: true,
+                            repeat: 2
+                        });
+                    }
                 });
             });
         }
     }
 
     createAtmosphereParticles() {
-        // Subtle floating lights
-        for (let i = 0; i < 20; i++) {
-            const p = this.add.circle(Math.random() * 2000, Math.random() * 2000, 2, 0xffffff, 0.4);
+        for (let i = 0; i < 30; i++) {
+            const p = this.add.circle(Math.random() * 2000, Math.random() * 1800, 3, 0xffffff, 0.3);
             this.tweens.add({
                 targets: p,
-                y: '-=50',
-                x: '+=20',
+                y: '-=100',
+                x: '+=30',
                 alpha: 0,
-                duration: 3000 + Math.random() * 3000,
+                duration: 4000 + Math.random() * 4000,
                 repeat: -1,
                 delay: Math.random() * 5000
             });
@@ -128,103 +181,95 @@ class HomeScene extends Phaser.Scene {
     }
 
     createCastle(x, y, level) {
-        // ... (Keep existing castle logic, just adjust interactive area if needed)
         this.castleContainer = this.add.container(x, y);
         this.castlePoint = this.add.circle(x, y, 5, 0xff0000).setVisible(false);
 
         const graphics = this.add.graphics();
+        // Shadow
+        graphics.fillStyle(0x000000, 0.1);
+        graphics.fillEllipse(0, 0, 200, 40);
 
-        // --- Central Tower ---
         graphics.fillStyle(0xE0E0E0, 1);
-        graphics.fillRect(-60, -120, 120, 120); // Main tower body
+        graphics.fillRect(-60, -120, 120, 120);
         graphics.lineStyle(4, 0x333333, 1);
         graphics.strokeRect(-60, -120, 120, 120);
-
-        // Roof
         graphics.fillStyle(0xFF5252, 1);
-        graphics.fillTriangle(-70, -120, 70, -120, 0, -200);
-        graphics.strokeTriangle(-70, -120, 70, -120, 0, -200);
-
-        // --- Gate (always there) ---
+        graphics.fillTriangle(-75, -120, 75, -120, 0, -210);
+        graphics.strokeTriangle(-75, -120, 75, -120, 0, -210);
         graphics.fillStyle(0x795548, 1);
-        graphics.fillRect(-20, -40, 40, 40);
+        graphics.fillRect(-22, -45, 44, 45);
+        graphics.strokeRect(-22, -45, 44, 45);
 
-        // Level 2: Left Wing
         if (level >= 2) {
             graphics.fillStyle(0xD0D0D0, 1);
-            graphics.fillRect(-130, -80, 70, 80);
-            graphics.strokeRect(-130, -80, 70, 80);
+            graphics.fillRect(-140, -80, 80, 80);
+            graphics.strokeRect(-140, -80, 80, 80);
             graphics.fillStyle(0xFF8A80, 1);
-            graphics.fillTriangle(-140, -80, -50, -80, -95, -130);
-            graphics.strokeTriangle(-140, -80, -50, -80, -95, -130);
+            graphics.fillTriangle(-150, -80, -50, -80, -100, -140);
+            graphics.strokeTriangle(-150, -80, -50, -80, -100, -140);
         }
-
-        // Level 3: Right Wing
         if (level >= 3) {
             graphics.fillStyle(0xD0D0D0, 1);
-            graphics.fillRect(60, -80, 70, 80);
-            graphics.strokeRect(60, -80, 70, 80);
+            graphics.fillRect(60, -80, 80, 80);
+            graphics.strokeRect(60, -80, 80, 80);
             graphics.fillStyle(0xFF8A80, 1);
-            graphics.fillTriangle(50, -80, 140, -80, 95, -130);
-            graphics.strokeTriangle(50, -80, 140, -80, 95, -130);
+            graphics.fillTriangle(50, -80, 150, -80, 100, -140);
+            graphics.strokeTriangle(50, -80, 150, -80, 100, -140);
         }
-
-        // Level 4: Windows and Decorations
         if (level >= 4) {
             graphics.fillStyle(0xFFFF00, 1);
-            graphics.fillRect(-30, -90, 20, 25); // Window left
-            graphics.fillRect(10, -90, 20, 25);  // Window right
+            graphics.fillRect(-35, -95, 25, 30);
+            graphics.fillRect(10, -95, 25, 30);
         }
-
-        // Level 5: Flag
         if (level >= 5) {
-            graphics.lineStyle(4, 0x616161, 1);
-            graphics.lineBetween(0, -200, 0, -250);
+            graphics.lineStyle(5, 0x424242, 1);
+            graphics.lineBetween(0, -210, 0, -270);
             graphics.fillStyle(0xFFFF00, 1);
-            graphics.fillTriangle(0, -250, 40, -235, 0, -220);
+            graphics.fillTriangle(0, -270, 50, -245, 0, -220);
+            graphics.strokeTriangle(0, -270, 50, -245, 0, -220);
         }
-
         this.castleContainer.add(graphics);
-
-        const text = this.add.text(0, 30, '🏰', { fontSize: '48px' }).setOrigin(0.5);
+        const text = this.add.text(0, 40, '👑', { fontSize: '56px' }).setOrigin(0.5);
         this.castleContainer.add(text);
 
         this.tweens.add({
             targets: this.castleContainer,
-            scaleX: 1.05,
-            scaleY: 1.05,
+            scaleX: 1.03,
+            scaleY: 1.03,
             yoyo: true,
             repeat: -1,
-            duration: 2000,
+            duration: 1800,
             ease: 'Sine.easeInOut'
         });
     }
 
     createAnimal(x, y, emoji) {
-        const emojiMap = { '🐶': '🐕', '🐱': '🐈', '🐰': '🐇', '🐼': '🐼', '🐨': '🐨', '🐯': '🐅' };
-        const fullEmoji = emojiMap[emoji] || emoji;
-
-        const animal = this.add.text(x, y, fullEmoji, { fontSize: '64px' }).setOrigin(0.5);
+        const animal = this.add.text(x, y, emoji, { fontSize: '72px' }).setOrigin(0.5);
         this.physics.add.existing(animal);
         animal.setInteractive();
+        animal.setDepth(y);
 
-        animal.on('pointerdown', () => {
+        animal.on('pointerdown', (p, lx, ly, event) => {
+            event.stopPropagation();
             window.audioController.playSE('jump');
+
+            // Squash and stretch
             this.tweens.add({
                 targets: animal,
-                y: animal.y - 100,
-                scaleX: 1.2,
-                scaleY: 1.2,
-                duration: 200,
+                y: animal.y - 120,
+                scaleX: 1.3,
+                scaleY: 0.7,
+                duration: 250,
                 yoyo: true,
                 onComplete: () => {
-                    // Show heart
-                    const heart = this.add.text(animal.x, animal.y - 80, '❤️', { fontSize: '32px' }).setOrigin(0.5);
+                    const bubbleItems = ['❤️', '🍭', '🍓', '🌟', '🥕', '🍦'];
+                    const heart = this.add.text(animal.x, animal.y - 100, Phaser.Math.RND.pick(bubbleItems), { fontSize: '40px' }).setOrigin(0.5);
                     this.tweens.add({
                         targets: heart,
-                        y: heart.y - 50,
+                        y: heart.y - 80,
                         alpha: 0,
-                        duration: 800,
+                        scale: 1.5,
+                        duration: 1000,
                         onComplete: () => heart.destroy()
                     });
                 }
@@ -232,22 +277,17 @@ class HomeScene extends Phaser.Scene {
         });
 
         this.time.addEvent({
-            delay: 3000 + Math.random() * 2000,
+            delay: 4000 + Math.random() * 3000,
             callback: () => {
-                const speed = 40;
+                if (!animal.body) return;
+                const speed = 45;
                 const angle = Math.random() * Math.PI * 2;
                 animal.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
-
-                // Flip sprite based on direction
-                if (Math.cos(angle) < 0) {
-                    animal.setFlipX(true);
-                } else {
-                    animal.setFlipX(false);
-                }
+                animal.setFlipX(Math.cos(angle) < 0);
+                animal.setDepth(animal.y);
             },
             loop: true
         });
-
         this.animals.add(animal);
     }
 }

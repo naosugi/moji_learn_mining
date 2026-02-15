@@ -123,9 +123,16 @@ class AudioController {
                 break;
 
             case 'sparkle':
+                // Magic chime
                 this.playTone(880, 0.05, 0, 'sine');
-                this.playTone(1320, 0.05, 0.05, 'sine');
-                this.playTone(1760, 0.05, 0.1, 'sine');
+                this.playTone(1108.73, 0.05, 0.05, 'sine');
+                this.playTone(1318.51, 0.05, 0.1, 'sine');
+                this.playTone(1760, 0.1, 0.15, 'sine');
+                break;
+
+            case 'pollen':
+                // Very high pitch small twinkle
+                this.playTone(2000 + Math.random() * 1000, 0.05, 0, 'sine');
                 break;
         }
     }

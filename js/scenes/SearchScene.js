@@ -185,6 +185,7 @@ class SearchScene extends Phaser.Scene {
 
         // Save progress (Level up castle, add animal, or add nature)
         const currentData = Utils.getData();
+        currentData.winCount = (currentData.winCount || 0) + 1;
         let message = "";
 
         // Cycle between 3 reward types

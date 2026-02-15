@@ -2,7 +2,8 @@
 window.gameState = {
     castleLevel: 1,
     animals: [],
-    floraCount: 0 // Start with 0 flowers/trees
+    floraCount: 0,
+    winCount: 0 // Track total wins for long-term rewards like Rainbow
 };
 
 const Utils = {

@@ -4,6 +4,7 @@ class HomeScene extends Phaser.Scene {
     }
 
     create() {
+        if (window.audioController) window.audioController.playBGM();
         const data = Utils.getData();
 
         // --- 1. Environmental Atmosphere (Gradient Sky) ---

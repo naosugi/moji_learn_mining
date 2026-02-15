@@ -33,7 +33,18 @@ class HomeScene extends Phaser.Scene {
 
         // Sun or Moon
         if (isNight) {
+            // Moon Glow
+            const moonGlow = this.add.circle(1800, 200, 100, 0xFFFFCC, 0.3);
+            this.tweens.add({
+                targets: moonGlow,
+                scale: 1.2,
+                alpha: 0.1,
+                duration: 2000,
+                yoyo: true,
+                repeat: -1
+            });
             const moon = this.add.text(1800, 200, '🌙', { fontSize: '120px' }).setOrigin(0.5);
+
             // Twinkling stars
             for (let i = 0; i < 50; i++) {
                 const star = this.add.text(Math.random() * 2000, Math.random() * 1000, '⭐', { fontSize: (10 + Math.random() * 20) + 'px' }).setAlpha(0.7);
@@ -46,6 +57,17 @@ class HomeScene extends Phaser.Scene {
                 });
             }
         } else {
+            // Sun Glow
+            const sunGlow = this.add.circle(1800, 200, 120, 0xFFD700, 0.4);
+            this.tweens.add({
+                targets: sunGlow,
+                scale: 1.3,
+                alpha: 0.2,
+                duration: 3000,
+                yoyo: true,
+                repeat: -1
+            });
+
             const sun = this.add.text(1800, 200, '🌞', { fontSize: '150px' }).setOrigin(0.5);
             this.tweens.add({
                 targets: sun,
@@ -225,12 +247,17 @@ class HomeScene extends Phaser.Scene {
         this.collectionGroup = this.add.group();
 
         // Overlay
-        const overlay = this.add.rectangle(1000, 1000, 2000, 2000, 0x000000, 0.8);
-        overlay.setInteractive(); // Block other inputs
+        const overlay = this.add.rectangle(1000, 1000, 2000, 2000, 0x000000, 0.8)
+            .setInteractive()
+            .setScrollFactor(0);
         this.collectionGroup.add(overlay);
 
-        // Close button (huge)
-        const closeBtn = this.add.text(1800, 200, '✖️', { fontSize: '100px', color: '#ffffff' }).setOrigin(0.5).setInteractive();
+        // Close button
+        const closeBtn = this.add.text(1800, 200, '✖️', { fontSize: '100px', color: '#ffffff' })
+            .setOrigin(0.5)
+            .setInteractive()
+            .setScrollFactor(0);
+
         closeBtn.on('pointerdown', () => {
             this.toggleCollection();
         });
@@ -242,29 +269,69 @@ class HomeScene extends Phaser.Scene {
             fontFamily: '"Hiragino Maru Gothic ProN"',
             color: '#FFD700',
             stroke: '#000000', strokeThickness: 4
-        }).setOrigin(0.5);
+        })
+            .setOrigin(0.5)
+            .setScrollFactor(0);
         this.collectionGroup.add(title);
 
-        // Grid
         const data = Utils.getData();
         const collected = data.collectedHiragana || [];
-        // Unique and sorted
         const uniqueChars = [...new Set(collected)].sort();
 
-        // Display in a grid
-        const cols = 5;
-        const startX = 400;
-        const startY = 500;
-        const spaX = 300;
-        const spaY = 250;
+        // Calculate pages
+        const itemsPerPage = 15; // 5 cols x 3 rows
+        const maxPages = Math.ceil(uniqueChars.length / itemsPerPage) || 1;
+        let currentPage = 1;
 
-        if (uniqueChars.length === 0) {
-            const emptyTxt = this.add.text(1000, 1000, 'まだなにもないよ。\nひらがなさがしにいこう！', {
-                fontSize: '60px', color: '#fff', align: 'center'
-            }).setOrigin(0.5);
-            this.collectionGroup.add(emptyTxt);
-        } else {
-            uniqueChars.forEach((char, index) => {
+        // Container for grid items to easily swap pages
+        const gridContainer = this.add.container(0, 0).setScrollFactor(0);
+        this.collectionGroup.add(gridContainer);
+
+        const renderPage = (page) => {
+            gridContainer.removeAll(true);
+
+            // Pagination Controls if needed
+            if (maxPages > 1) {
+                const pageText = this.add.text(1000, 1300, `${page} / ${maxPages}`, { fontSize: '50px', color: '#fff' })
+                    .setOrigin(0.5);
+                gridContainer.add(pageText);
+
+                if (page > 1) {
+                    const prevBtn = this.add.text(600, 1300, '◀️ まえ', { fontSize: '50px', backgroundColor: '#333', padding: 10 })
+                        .setOrigin(0.5)
+                        .setInteractive();
+                    prevBtn.on('pointerdown', () => renderPage(page - 1));
+                    gridContainer.add(prevBtn);
+                }
+
+                if (page < maxPages) {
+                    const nextBtn = this.add.text(1400, 1300, 'つぎ ▶️', { fontSize: '50px', backgroundColor: '#333', padding: 10 })
+                        .setOrigin(0.5)
+                        .setInteractive();
+                    nextBtn.on('pointerdown', () => renderPage(page + 1));
+                    gridContainer.add(nextBtn);
+                }
+            }
+
+            if (uniqueChars.length === 0) {
+                const emptyTxt = this.add.text(1000, 800, 'まだなにもないよ。\nひらがなさがしにいこう！', {
+                    fontSize: '60px', color: '#fff', align: 'center'
+                }).setOrigin(0.5);
+                gridContainer.add(emptyTxt);
+                return;
+            }
+
+            const startIndex = (page - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, uniqueChars.length);
+            const pageItems = uniqueChars.slice(startIndex, endIndex);
+
+            const cols = 5;
+            const startX = 400;
+            const startY = 500;
+            const spaX = 300;
+            const spaY = 250;
+
+            pageItems.forEach((char, index) => {
                 const c = index % cols;
                 const r = Math.floor(index / cols);
 
@@ -275,17 +342,6 @@ class HomeScene extends Phaser.Scene {
                     stroke: '#FFA500', strokeThickness: 6,
                     shadow: { offsetX: 4, offsetY: 4, color: '#000', blur: 4, stroke: true, fill: true }
                 }).setOrigin(0.5);
-
-                this.collectionGroup.add(charTxt);
-
-                // Pop animation
-                this.tweens.add({
-                    targets: charTxt,
-                    scale: { from: 0, to: 1 },
-                    duration: 400,
-                    delay: index * 50,
-                    ease: 'Back.out'
-                });
 
                 charTxt.setInteractive();
                 charTxt.on('pointerdown', () => {
@@ -298,12 +354,15 @@ class HomeScene extends Phaser.Scene {
                         yoyo: true
                     });
                 });
+
+                gridContainer.add(charTxt);
             });
-        }
+        };
+
+        renderPage(currentPage);
     }
 
     createRainbow() {
-        const data = Utils.getData();
         const colors = [0xFF0000, 0xFF7F00, 0xFFFF00, 0x00FF00, 0x0000FF, 0x4B0082, 0x9400D3];
         const alpha = Math.min(0.1 + (data.winCount - 3) * 0.1, 0.6);
 
@@ -458,10 +517,15 @@ class HomeScene extends Phaser.Scene {
         const rares = ['🦄', '🐉', '🦖', '🦚', '🧚'];
         const creatureChar = Phaser.Math.RND.pick(rares);
 
-        const creature = this.add.text(x, y, creatureChar, { fontSize: '100px' }).setOrigin(0.5);
+        // Adjust spawn to be lower so it pops up from the egg better
+        const spawnY = y + 50;
+
+        const creature = this.add.text(x, spawnY, creatureChar, { fontSize: '100px' }).setOrigin(0.5);
         this.physics.add.existing(creature);
-        creature.body.setVelocity(0, -200); // Jump up!
-        creature.body.gravity.y = 500;
+        creature.body.setVelocity(0, -600); // Higher jump!
+        creature.body.gravity.y = 800; // Heavier gravity for better feel
+        creature.body.setBounce(0.4);
+        creature.body.setCollideWorldBounds(true);
         creature.setInteractive();
 
         // Add to permanent collection
@@ -478,7 +542,7 @@ class HomeScene extends Phaser.Scene {
         // Creature behavior
         creature.on('pointerdown', () => {
             window.audioController.playSE('jump');
-            creature.body.setVelocityY(-350);
+            creature.body.setVelocityY(-450);
             Utils.speak('こんにちは！');
         });
     }

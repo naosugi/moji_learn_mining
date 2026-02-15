@@ -4,7 +4,8 @@ window.gameState = {
     animals: [],
     floraCount: 0,
     winCount: 0, // Track total wins for long-term rewards like Rainbow
-    mysteryEggState: 0 // 0: new, 1: cracking, 2: hatched
+    mysteryEggState: 0, // 0: new, 1: cracking, 2: hatched
+    collectedHiragana: [] // List of unique characters found
 };
 
 const Utils = {

@@ -187,6 +187,16 @@ class SearchScene extends Phaser.Scene {
         // Save progress (Level up castle, add animal, or add nature)
         const currentData = Utils.getData();
         currentData.winCount = (currentData.winCount || 0) + 1;
+
+        // Add to collected list
+        if (!currentData.collectedHiragana) {
+            currentData.collectedHiragana = [];
+        }
+        if (!currentData.collectedHiragana.includes(this.targetHiragana.char)) {
+            currentData.collectedHiragana.push(this.targetHiragana.char);
+            Utils.saveData('collectedHiragana', currentData.collectedHiragana);
+        }
+
         let message = "";
 
         // Cycle between 3 reward types

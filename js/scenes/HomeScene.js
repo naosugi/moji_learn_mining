@@ -112,6 +112,12 @@ class HomeScene extends Phaser.Scene {
 
         this.input.addPointer(1);
 
+        // --- 7. Collection Book (Zukan) ---
+        const bookBtn = this.add.text(1880, 80, '📖', { fontSize: '80px' }).setOrigin(0.5).setInteractive();
+        bookBtn.on('pointerdown', () => {
+            this.toggleCollection();
+        });
+
         // Transition logic (Castle area)
         this.castleContainer.setInteractive(new Phaser.Geom.Rectangle(-120, -200, 240, 250), Phaser.Geom.Rectangle.Contains);
         this.castleContainer.on('pointerdown', (p, x, y, event) => {
@@ -122,6 +128,94 @@ class HomeScene extends Phaser.Scene {
                 this.scene.start('SearchScene');
             });
         });
+    }
+
+    toggleCollection() {
+        if (this.isCollectionOpen) {
+            this.collectionGroup.destroy(true);
+            this.isCollectionOpen = false;
+            return;
+        }
+
+        this.isCollectionOpen = true;
+        this.collectionGroup = this.add.group();
+
+        // Overlay
+        const overlay = this.add.rectangle(1000, 1000, 2000, 2000, 0x000000, 0.8);
+        overlay.setInteractive(); // Block other inputs
+        this.collectionGroup.add(overlay);
+
+        // Close button (huge)
+        const closeBtn = this.add.text(1800, 200, '✖️', { fontSize: '100px', color: '#ffffff' }).setOrigin(0.5).setInteractive();
+        closeBtn.on('pointerdown', () => {
+            this.toggleCollection();
+        });
+        this.collectionGroup.add(closeBtn);
+
+        // Title
+        const title = this.add.text(1000, 300, 'あつめたひらがな', {
+            fontSize: '80px',
+            fontFamily: '"Hiragino Maru Gothic ProN"',
+            color: '#FFD700',
+            stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0.5);
+        this.collectionGroup.add(title);
+
+        // Grid
+        const data = Utils.getData();
+        const collected = data.collectedHiragana || [];
+        // Unique and sorted
+        const uniqueChars = [...new Set(collected)].sort();
+
+        // Display in a grid
+        const cols = 5;
+        const startX = 400;
+        const startY = 500;
+        const spaX = 300;
+        const spaY = 250;
+
+        if (uniqueChars.length === 0) {
+            const emptyTxt = this.add.text(1000, 1000, 'まだなにもないよ。\nひらがなさがしにいこう！', {
+                fontSize: '60px', color: '#fff', align: 'center'
+            }).setOrigin(0.5);
+            this.collectionGroup.add(emptyTxt);
+        } else {
+            uniqueChars.forEach((char, index) => {
+                const c = index % cols;
+                const r = Math.floor(index / cols);
+
+                const charTxt = this.add.text(startX + c * spaX, startY + r * spaY, char, {
+                    fontSize: '120px',
+                    fontFamily: '"Hiragino Maru Gothic ProN"',
+                    color: '#ffffff',
+                    stroke: '#FFA500', strokeThickness: 6,
+                    shadow: { offsetX: 4, offsetY: 4, color: '#000', blur: 4, stroke: true, fill: true }
+                }).setOrigin(0.5);
+
+                this.collectionGroup.add(charTxt);
+
+                // Pop animation
+                this.tweens.add({
+                    targets: charTxt,
+                    scale: { from: 0, to: 1 },
+                    duration: 400,
+                    delay: index * 50,
+                    ease: 'Back.out'
+                });
+
+                charTxt.setInteractive();
+                charTxt.on('pointerdown', () => {
+                    Utils.speak(char);
+                    window.audioController.playSE('pop');
+                    this.tweens.add({
+                        targets: charTxt,
+                        scale: 1.5,
+                        duration: 100,
+                        yoyo: true
+                    });
+                });
+            });
+        }
     }
 
     createRainbow() {

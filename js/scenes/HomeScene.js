@@ -7,26 +7,49 @@ class HomeScene extends Phaser.Scene {
         if (window.audioController) window.audioController.playBGM();
         const data = Utils.getData();
 
+        // --- 0. Day/Night Cycle ---
+        // 20% chance of Night Mode, or based on real time? Let's do random for variety
+        const isNight = Math.random() < 0.2;
+
         // --- 1. Environmental Atmosphere (Gradient Sky) ---
         const sky = this.add.graphics();
-        sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xE0F7FA, 0xE0F7FA, 1);
+        if (isNight) {
+            sky.fillGradientStyle(0x000033, 0x000033, 0x191970, 0x191970, 1);
+        } else {
+            sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xE0F7FA, 0xE0F7FA, 1);
+        }
         sky.fillRect(0, 0, 2000, 1500);
 
         // Add distant mountains for depth
         const mountains = this.add.graphics();
-        mountains.fillStyle(0xAED581, 1);
+        mountains.fillStyle(isNight ? 0x2E7D32 : 0xAED581, 1); // Darker at night
         mountains.fillTriangle(0, 1800, 500, 1400, 1000, 1800);
         mountains.fillTriangle(600, 1800, 1200, 1300, 1800, 1800);
         mountains.fillTriangle(1400, 1800, 1800, 1500, 2200, 1800);
 
-        // Smiling Sun
-        const sun = this.add.text(1800, 200, '🌞', { fontSize: '150px' }).setOrigin(0.5);
-        this.tweens.add({
-            targets: sun,
-            angle: 360,
-            duration: 20000,
-            repeat: -1
-        });
+        // Sun or Moon
+        if (isNight) {
+            const moon = this.add.text(1800, 200, '🌙', { fontSize: '120px' }).setOrigin(0.5);
+            // Twinkling stars
+            for (let i = 0; i < 50; i++) {
+                const star = this.add.text(Math.random() * 2000, Math.random() * 1000, '⭐', { fontSize: (10 + Math.random() * 20) + 'px' }).setAlpha(0.7);
+                this.tweens.add({
+                    targets: star,
+                    alpha: 0.2,
+                    duration: 1000 + Math.random() * 2000,
+                    yoyo: true,
+                    repeat: -1
+                });
+            }
+        } else {
+            const sun = this.add.text(1800, 200, '🌞', { fontSize: '150px' }).setOrigin(0.5);
+            this.tweens.add({
+                targets: sun,
+                angle: 360,
+                duration: 20000,
+                repeat: -1
+            });
+        }
 
         this.physics.world.setBounds(0, 0, 2000, 2000);
         this.cameras.main.setBounds(0, 0, 2000, 2000);
@@ -54,21 +77,21 @@ class HomeScene extends Phaser.Scene {
         // --- 4. Castle ---
         const baseLevel = data.castleLevel || 1;
         // Move castle slightly down into the ground
-        this.createCastle(1000, 1580, baseLevel);
+        this.createCastle(1000, 1580, baseLevel, isNight);
 
         // --- 5. Particles (Pollen/Light) ---
-        this.createAtmosphereParticles();
+        this.createAtmosphereParticles(isNight);
 
         // --- 6. Animals ---
         this.animals = this.physics.add.group();
         if (data.animals) {
             data.animals.forEach((animalType) => {
-                this.createAnimal(1000 + (Math.random() - 0.5) * 1200, 1680 + (Math.random() - 0.5) * 100, animalType);
+                this.createAnimal(1000 + (Math.random() - 0.5) * 1200, 1680 + (Math.random() - 0.5) * 100, animalType, isNight);
             });
         }
 
         if (!data.animals || data.animals.length === 0) {
-            this.createAnimal(900, 1680, '🐕');
+            this.createAnimal(900, 1680, '🐕', isNight);
         }
 
         // Camera
@@ -318,9 +341,13 @@ class HomeScene extends Phaser.Scene {
         }
     }
 
-    createAtmosphereParticles() {
+    createAtmosphereParticles(isNight = false) {
+        // Fireflies at night, Light particles at day
+        const color = isNight ? 0xFFFF00 : 0xffffff;
+        const alpha = isNight ? 1 : 0.3;
+
         for (let i = 0; i < 30; i++) {
-            const p = this.add.circle(Math.random() * 2000, Math.random() * 1800, 3, 0xffffff, 0.3);
+            const p = this.add.circle(Math.random() * 2000, Math.random() * 1800, isNight ? 4 : 3, color, alpha);
             this.tweens.add({
                 targets: p,
                 y: '-=100',
@@ -333,7 +360,7 @@ class HomeScene extends Phaser.Scene {
         }
     }
 
-    createCastle(x, y, level) {
+    createCastle(x, y, level, isNight = false) {
         this.castleContainer = this.add.container(x, y);
         this.castlePoint = this.add.circle(x, y, 5, 0xff0000).setVisible(false);
 
@@ -370,7 +397,7 @@ class HomeScene extends Phaser.Scene {
             graphics.strokeTriangle(50, -80, 150, -80, 100, -140);
         }
         if (level >= 4) {
-            graphics.fillStyle(0xFFFF00, 1);
+            graphics.fillStyle(isNight ? 0xFFEA00 : 0xFFFF00, 1); // Brighter yellow at night
             graphics.fillRect(-35, -95, 25, 30);
             graphics.fillRect(10, -95, 25, 30);
         }
@@ -393,10 +420,10 @@ class HomeScene extends Phaser.Scene {
             });
         }
 
-        // Window lights (Level 4+)
-        if (level >= 4) {
-            const lightL = this.add.circle(-22, -80, 8, 0xFFFF00, 0.8);
-            const lightR = this.add.circle(22, -80, 8, 0xFFFF00, 0.8);
+        // Window lights always on at night, or if level >= 4
+        if (isNight || level >= 4) {
+            const lightL = this.add.circle(-22, -80, 8, isNight ? 0xFF9800 : 0xFFFF00, 0.8);
+            const lightR = this.add.circle(22, -80, 8, isNight ? 0xFF9800 : 0xFFFF00, 0.8);
             this.castleContainer.add(lightL);
             this.castleContainer.add(lightR);
 
@@ -447,11 +474,40 @@ class HomeScene extends Phaser.Scene {
         });
     }
 
-    createAnimal(x, y, emoji) {
+    createAnimal(x, y, emoji, isNight = false) {
         const animal = this.add.text(x, y, emoji, { fontSize: '72px' }).setOrigin(0.5);
         this.physics.add.existing(animal);
         animal.setInteractive();
         animal.setDepth(y);
+
+        // Movement logic
+        if (isNight && ['🦄', '🐉', '🧚'].includes(emoji)) {
+            // Flying creatures at night
+            animal.body.allowGravity = false;
+            this.tweens.add({
+                targets: animal,
+                y: y - 300,
+                x: x + 200,
+                duration: 4000,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        } else {
+            // Normal walking
+            this.time.addEvent({
+                delay: 4000 + Math.random() * 3000,
+                callback: () => {
+                    if (!animal.body) return;
+                    const speed = 45;
+                    const angle = Math.random() * Math.PI * 2;
+                    animal.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+                    animal.setFlipX(Math.cos(angle) < 0);
+                    animal.setDepth(animal.y);
+                },
+                loop: true
+            });
+        }
 
         animal.on('pointerdown', (p, lx, ly, event) => {
             event.stopPropagation();
@@ -478,19 +534,6 @@ class HomeScene extends Phaser.Scene {
                     });
                 }
             });
-        });
-
-        this.time.addEvent({
-            delay: 4000 + Math.random() * 3000,
-            callback: () => {
-                if (!animal.body) return;
-                const speed = 45;
-                const angle = Math.random() * Math.PI * 2;
-                animal.body.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
-                animal.setFlipX(Math.cos(angle) < 0);
-                animal.setDepth(animal.y);
-            },
-            loop: true
         });
         this.animals.add(animal);
     }

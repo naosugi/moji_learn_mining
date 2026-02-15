@@ -183,25 +183,28 @@ class SearchScene extends Phaser.Scene {
             }
         });
 
-        // Save progress (Level up castle or add animal)
+        // Save progress (Level up castle, add animal, or add nature)
         const currentData = Utils.getData();
         let message = "";
 
-        // Alternate between reward types
-        const rewardIdx = (currentData.castleLevel || 0) + (currentData.animals ? currentData.animals.length : 0);
+        // Cycle between 3 reward types
+        const rewardType = ((currentData.castleLevel || 0) + (currentData.animals ? currentData.animals.length : 0) + (currentData.floraCount / 5)) % 3;
 
-        if (rewardIdx % 2 === 0) {
+        if (rewardType < 1) {
             currentData.castleLevel = (currentData.castleLevel || 1) + 1;
             Utils.saveData('castleLevel', currentData.castleLevel);
             message = "おうちが大きくなったよ！";
-        } else {
-            // Add random full-body animal
+        } else if (rewardType < 2) {
             const animals = ['🐕', '🐈', '🐇', '🐘', '🦒', '🐎', '🐒', '🐅', '🦓', '🐪'];
             const newAnimal = Phaser.Math.RND.pick(animals);
             if (!currentData.animals) currentData.animals = [];
             currentData.animals.push(newAnimal);
             Utils.saveData('animals', currentData.animals);
             message = "ともだちが遊びにきたよ！";
+        } else {
+            currentData.floraCount = (currentData.floraCount || 0) + 5;
+            Utils.saveData('floraCount', currentData.floraCount);
+            message = "おはなが増えたよ！";
         }
 
         // Return to Home after delay

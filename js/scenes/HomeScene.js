@@ -27,7 +27,7 @@ class HomeScene extends Phaser.Scene {
         const baseLevel = data.castleLevel || 1;
 
         // Draw Castle
-        this.createCastle(1000, 1400, baseLevel);
+        this.createCastle(1000, 1500, baseLevel);
 
         // --- 4. Particles (Pollen/Light) ---
         this.createAtmosphereParticles();
@@ -36,12 +36,12 @@ class HomeScene extends Phaser.Scene {
         this.animals = this.physics.add.group();
         if (data.animals) {
             data.animals.forEach((animalType) => {
-                this.createAnimal(1000 + (Math.random() - 0.5) * 800, 1550 + (Math.random() - 0.5) * 200, animalType);
+                this.createAnimal(1000 + (Math.random() - 0.5) * 800, 1650 + (Math.random() - 0.5) * 100, animalType);
             });
         }
 
         if (!data.animals || data.animals.length === 0) {
-            this.createAnimal(900, 1550, '🐕');
+            this.createAnimal(900, 1650, '🐕');
         }
 
         // Camera controls
@@ -86,10 +86,15 @@ class HomeScene extends Phaser.Scene {
     }
 
     createNature() {
+        const data = Utils.getData();
+        const floraCount = data.floraCount || 0;
+        const initialCount = 4; // Start with just a few elements
+        const totalToSpawn = initialCount + floraCount;
+
         const items = ['🌲', '🌳', '🌷', '🌻', '🌼'];
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < totalToSpawn; i++) {
             const x = Math.random() * 2000;
-            const y = 1500 + Math.random() * 400;
+            const y = 1500 + Math.random() * 250; // Place on the ground correctly
             const item = this.add.text(x, y, Phaser.Math.RND.pick(items), { fontSize: '48px' }).setOrigin(0.5, 1);
             item.setInteractive();
 

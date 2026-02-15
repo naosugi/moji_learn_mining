@@ -177,7 +177,7 @@ class HomeScene extends Phaser.Scene {
         const debugContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(2000);
 
         const buttons = [
-            { text: 'RESET', color: '#ff0000', action: () => { localStorage.removeItem('mojilearn_state'); localStorage.clear(); location.reload(); } },
+            { text: 'RESET', color: '#ff0000', action: () => { window.gameState = { castleLevel: 1, animals: [], floraCount: 0, winCount: 0, mysteryEggState: 0, collectedHiragana: [], eggsHatched: 0 }; location.reload(); } },
             {
                 text: 'WIN++', color: '#00ff00', action: () => {
                     const d = Utils.getData();

@@ -95,7 +95,8 @@ class AudioController {
                 break;
 
             case 'correct':
-                // Fanfare-ish: C - E - G (use playTone, clean up unused osc)
+                // Fanfare-ish: C - E - G (use playTone, discard unused shared osc)
+                osc.start(now);
                 osc.stop(now);
                 this.playTone(523.25, 0.1, 0, 'sine');
                 this.playTone(659.25, 0.1, 0.1, 'sine');
@@ -132,7 +133,8 @@ class AudioController {
                 break;
 
             case 'sparkle':
-                // Magic chime (use playTone, clean up unused osc)
+                // Magic chime (use playTone, discard unused shared osc)
+                osc.start(now);
                 osc.stop(now);
                 this.playTone(880, 0.05, 0, 'sine');
                 this.playTone(1108.73, 0.05, 0.05, 'sine');
@@ -141,7 +143,8 @@ class AudioController {
                 break;
 
             case 'pollen':
-                // Very high pitch small twinkle (use playTone, clean up unused osc)
+                // Very high pitch small twinkle (use playTone, discard unused shared osc)
+                osc.start(now);
                 osc.stop(now);
                 this.playTone(2000 + Math.random() * 1000, 0.05, 0, 'sine');
                 break;

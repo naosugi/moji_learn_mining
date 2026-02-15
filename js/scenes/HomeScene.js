@@ -177,7 +177,7 @@ class HomeScene extends Phaser.Scene {
         const debugContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(2000);
 
         const buttons = [
-            { text: 'RESET', color: '#ff0000', action: () => { window.gameState = { castleLevel: 1, animals: [], floraCount: 0, winCount: 0, mysteryEggState: 0, collectedHiragana: [], eggsHatched: 0 }; location.reload(); } },
+            { text: 'RESET', color: '#ff0000', action: () => { location.reload(); } },
             {
                 text: 'WIN++', color: '#00ff00', action: () => {
                     const d = Utils.getData();
@@ -439,6 +439,7 @@ class HomeScene extends Phaser.Scene {
         // If close to hatching (4 wins), make it wobble and bigger
         if (progress === 4) {
             scale = 1.3;
+            egg.setScale(scale);
             this.tweens.add({
                 targets: egg,
                 angle: { from: -10, to: 10 },
@@ -465,6 +466,7 @@ class HomeScene extends Phaser.Scene {
 
         if (isReadyToHatch) {
             scale = 1.4;
+            egg.setScale(scale);
             egg.setText('🥚✨'); // Mark as special
 
             // Auto hatch animation sequence on tap

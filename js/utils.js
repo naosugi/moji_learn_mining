@@ -3,7 +3,8 @@ window.gameState = {
     castleLevel: 1,
     animals: [],
     floraCount: 0,
-    winCount: 0 // Track total wins for long-term rewards like Rainbow
+    winCount: 0, // Track total wins for long-term rewards like Rainbow
+    mysteryEggState: 0 // 0: new, 1: cracking, 2: hatched
 };
 
 const Utils = {

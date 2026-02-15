@@ -12,6 +12,22 @@ class HomeScene extends Phaser.Scene {
         sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xE0F7FA, 0xE0F7FA, 1);
         sky.fillRect(0, 0, 2000, 1500);
 
+        // Add distant mountains for depth
+        const mountains = this.add.graphics();
+        mountains.fillStyle(0xAED581, 1);
+        mountains.fillTriangle(0, 1800, 500, 1400, 1000, 1800);
+        mountains.fillTriangle(600, 1800, 1200, 1300, 1800, 1800);
+        mountains.fillTriangle(1400, 1800, 1800, 1500, 2200, 1800);
+
+        // Smiling Sun
+        const sun = this.add.text(1800, 200, '🌞', { fontSize: '150px' }).setOrigin(0.5);
+        this.tweens.add({
+            targets: sun,
+            angle: 360,
+            duration: 20000,
+            repeat: -1
+        });
+
         this.physics.world.setBounds(0, 0, 2000, 2000);
         this.cameras.main.setBounds(0, 0, 2000, 2000);
 
@@ -23,7 +39,9 @@ class HomeScene extends Phaser.Scene {
         ground.fillEllipse(300, 1800, 1200, 400);
         ground.fillEllipse(1700, 1800, 1200, 400);
 
-        // --- 2. Floating Clouds & Rainbow ---
+        // --- 2. Floating Clouds & Rainbow & Egg ---
+        this.createMysteryEgg();
+
         if (data.winCount >= 3) {
             this.createRainbow();
         }
@@ -130,6 +148,64 @@ class HomeScene extends Phaser.Scene {
                 ease: 'Sine.easeInOut'
             });
         }
+    }
+
+    createMysteryEgg() {
+        const data = Utils.getData();
+        const state = data.mysteryEggState || 0;
+
+        // If hatched, no egg anymore (the creature would be in animals list)
+        if (state >= 2) return;
+
+        // Egg appearance changes based on progress towards next hatch
+        // Let's say hatch happens at winCount = 5
+        const progress = data.winCount % 5;
+
+        const eggX = 1300;
+        const eggY = 1600;
+
+        let scale = 1.0;
+        let rotation = 0;
+
+        // If close to hatching (4 wins), make it wobble and bigger
+        if (progress >= 3) {
+            scale = 1.2;
+        }
+
+        const egg = this.add.text(eggX, eggY, '🥚', { fontSize: '100px' }).setOrigin(0.5, 1);
+        egg.setScale(scale);
+        egg.setInteractive();
+
+        // Wobble animation if close to hatching
+        if (progress >= 1) {
+            this.tweens.add({
+                targets: egg,
+                angle: { from: -5, to: 5 },
+                duration: 200 - (progress * 30), // Faster wobble as progress increase
+                yoyo: true,
+                repeat: -1
+            });
+        }
+
+        egg.on('pointerdown', () => {
+            // Shake heavily on tap
+            window.audioController.playSE('shake');
+            this.tweens.add({
+                targets: egg,
+                scaleX: 1.4,
+                scaleY: 0.8,
+                duration: 100,
+                yoyo: true,
+                onComplete: () => {
+                    // Slight possibility of "hint" sound?
+                    if (progress >= 4) {
+                        Utils.speak('もうすぐうまれるよ！');
+                    } else {
+                        Utils.speak('なにがうまれるかな？');
+                    }
+                }
+            });
+        });
     }
 
     createNature() {

@@ -13,6 +13,7 @@ class HomeScene extends Phaser.Scene {
         if (params && params.forceNight !== undefined) {
             isNight = params.forceNight;
         }
+        this.currentIsNight = isNight;
 
         // --- 1. Environmental Atmosphere (Gradient Sky) ---
         const sky = this.add.graphics();
@@ -116,19 +117,20 @@ class HomeScene extends Phaser.Scene {
         this.input.addPointer(1);
 
         // --- 7. Collection Book (Zukan) ---
-        const bookBtn = this.add.text(1880, 80, '📖', { fontSize: '80px' }).setOrigin(0.5).setInteractive();
+        const bookBtn = this.add.text(1880, 80, '📖', { fontSize: '80px' })
+            .setOrigin(0.5)
+            .setInteractive()
+            .setScrollFactor(0); // Fix to screen
+
         bookBtn.on('pointerdown', () => {
             this.toggleCollection();
         });
 
-        // --- 8. DEBUG MODE (Visible for testing) ---
-        const debugBtn = this.add.text(50, 50, '🐛', { fontSize: '60px' })
-            .setInteractive()
-            .setDepth(1000); // Top layer
-
-        debugBtn.on('pointerdown', () => {
-            this.toggleDebugMenu();
-        });
+        // --- 8. DEBUG MODE (URL Parameter: ?debug=true) ---
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('debug') === 'true') {
+            this.createDebugUI();
+        }
 
         // Transition logic (Castle area)
         this.castleContainer.setInteractive(new Phaser.Geom.Rectangle(-120, -200, 240, 250), Phaser.Geom.Rectangle.Contains);
@@ -142,67 +144,73 @@ class HomeScene extends Phaser.Scene {
         });
     }
 
-    toggleDebugMenu() {
-        if (this.isDebugOpen) {
-            this.debugGroup.destroy(true);
-            this.isDebugOpen = false;
-            return;
-        }
-        this.isDebugOpen = true;
-        this.debugGroup = this.add.group();
+    createDebugUI() {
+        const { width, height } = this.cameras.main;
+        const buttonWidth = 200;
+        const buttonHeight = 80;
+        const spacing = 20;
+        const startX = width - buttonWidth / 2 - 20;
+        const startY = height - 600;
 
-        const bg = this.add.rectangle(1000, 1000, 800, 1200, 0x000000, 0.9);
-        this.debugGroup.add(bg);
-
-        const title = this.add.text(1000, 450, 'DEBUG MENU', { fontSize: '60px', color: '#0f0' }).setOrigin(0.5);
-        this.debugGroup.add(title);
+        const debugContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(2000);
 
         const buttons = [
-            { text: 'Reset Data', action: () => { localStorage.clear(); location.reload(); } },
+            { text: 'RESET', color: '#ff0000', action: () => { localStorage.clear(); location.reload(); } },
             {
-                text: '+5 Wins (Hatch Ready)', action: () => {
+                text: 'WIN++', color: '#00ff00', action: () => {
                     const d = Utils.getData();
-                    d.winCount = (d.winCount || 0) + 5;
+                    d.winCount = (d.winCount || 0) + 1;
                     Utils.saveData('winCount', d.winCount);
                     this.scene.restart();
                 }
             },
             {
-                text: 'Set Night Mode', action: () => {
-                    // Force night via hacky reload with param? Or just restart scene with flag?
-                    // Ideally restart( { forceNight: true } )
-                    this.scene.restart({ forceNight: true });
+                text: 'HATCH', color: '#ffff00', action: () => {
+                    const d = Utils.getData();
+                    const cycleStart = (d.eggsHatched || 0) * 5;
+                    d.winCount = cycleStart + 4;
+                    Utils.saveData('winCount', d.winCount);
+                    this.scene.restart();
                 }
             },
             {
-                text: 'Set Day Mode', action: () => {
-                    this.scene.restart({ forceNight: false });
+                text: 'DAY/NIGHT', color: '#0000ff', action: () => {
+                    const currentNight = this.currentIsNight || false;
+                    this.scene.restart({ forceNight: !currentNight });
                 }
             },
             {
-                text: 'Unlock All Hiragana', action: () => {
+                text: 'ZUKAN', color: '#ff00ff', action: () => {
                     const d = Utils.getData();
                     d.collectedHiragana = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と', 'な', 'に', 'ぬ', 'ね', 'の', 'は', 'ひ', 'ふ', 'へ', 'ほ', 'ま', 'み', 'む', 'め', 'も', 'や', 'ゆ', 'よ', 'ら', 'り', 'る', 'れ', 'ろ', 'わ', 'を', 'ん'];
                     Utils.saveData('collectedHiragana', d.collectedHiragana);
                     Utils.speak('全部覚えたよ');
                 }
             },
-            {
-                text: 'Spawn Rare Animal', action: () => {
-                    this.spawnRareCreature(1000, 1600);
-                }
-            },
-            { text: 'Close', action: () => { this.toggleDebugMenu(); } }
+            { text: 'CLOSEUI', color: '#888888', action: () => { debugContainer.setVisible(!debugContainer.visible); } }
         ];
 
         buttons.forEach((btn, index) => {
-            const b = this.add.text(1000, 600 + index * 120, btn.text, { fontSize: '40px', backgroundColor: '#333', padding: { x: 20, y: 10 } })
-                .setOrigin(0.5)
+            const y = startY + index * (buttonHeight + spacing);
+
+            const bg = this.add.rectangle(startX, y, buttonWidth, buttonHeight, 0x000000, 0.7)
                 .setInteractive();
-            b.on('pointerdown', () => {
+
+            const text = this.add.text(startX, y, btn.text, { fontSize: '24px', color: btn.color || '#ffffff', fontStyle: 'bold' })
+                .setOrigin(0.5);
+
+            bg.on('pointerdown', () => {
                 btn.action();
+                this.tweens.add({
+                    targets: [bg, text],
+                    scale: 0.9,
+                    duration: 50,
+                    yoyo: true
+                });
             });
-            this.debugGroup.add(b);
+
+            debugContainer.add(bg);
+            debugContainer.add(text);
         });
     }
 

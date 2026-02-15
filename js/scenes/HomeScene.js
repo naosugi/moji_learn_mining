@@ -41,6 +41,7 @@ class HomeScene extends Phaser.Scene {
 
         // --- 2. Floating Clouds & Rainbow & Egg ---
         this.createMysteryEgg();
+        this.createSkyObjects();
 
         if (data.winCount >= 3) {
             this.createRainbow();
@@ -379,7 +380,35 @@ class HomeScene extends Phaser.Scene {
             graphics.fillStyle(0xFFFF00, 1);
             graphics.fillTriangle(0, -270, 50, -245, 0, -220);
             graphics.strokeTriangle(0, -270, 50, -245, 0, -220);
+
+            // Animated flag text
+            const flag = this.add.text(25, -260, '🚩', { fontSize: '40px' }).setOrigin(0.5);
+            this.castleContainer.add(flag);
+            this.tweens.add({
+                targets: flag,
+                scaleX: 0.8,
+                duration: 300,
+                yoyo: true,
+                repeat: -1
+            });
         }
+
+        // Window lights (Level 4+)
+        if (level >= 4) {
+            const lightL = this.add.circle(-22, -80, 8, 0xFFFF00, 0.8);
+            const lightR = this.add.circle(22, -80, 8, 0xFFFF00, 0.8);
+            this.castleContainer.add(lightL);
+            this.castleContainer.add(lightR);
+
+            this.tweens.add({
+                targets: [lightL, lightR],
+                alpha: 0.4,
+                duration: 1000 + Math.random() * 500,
+                yoyo: true,
+                repeat: -1
+            });
+        }
+
         this.castleContainer.add(graphics);
         const text = this.add.text(0, 40, '👑', { fontSize: '56px' }).setOrigin(0.5);
         this.castleContainer.add(text);
@@ -392,6 +421,29 @@ class HomeScene extends Phaser.Scene {
             repeat: -1,
             duration: 1800,
             ease: 'Sine.easeInOut'
+        });
+    }
+
+    createSkyObjects() {
+        // Airplane
+        const plane = this.add.text(-200, 300, '✈️', { fontSize: '80px' }).setOrigin(0.5);
+        this.tweens.add({
+            targets: plane,
+            x: 2200,
+            duration: 15000,
+            repeat: -1,
+            delay: 5000
+        });
+
+        // Balloon
+        const balloon = this.add.text(2200, 500, '🎈', { fontSize: '80px' }).setOrigin(0.5);
+        this.tweens.add({
+            targets: balloon,
+            x: -200,
+            y: 400,
+            duration: 25000,
+            repeat: -1,
+            delay: 0
         });
     }
 

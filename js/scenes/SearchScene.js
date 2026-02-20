@@ -37,15 +37,10 @@ class SearchScene extends Phaser.Scene {
     }
 
     getRandomHiragana() {
-        // Prototype: Only 'a' line
-        const hiraganaList = [
-            { char: 'あ', word: 'ありさん' },
-            { char: 'い', word: 'いちご' },
-            { char: 'う', word: 'うさぎさん' },
-            { char: 'え', word: 'えんぴつ' },
-            { char: 'お', word: 'おにぎり' }
-        ];
-        return Phaser.Math.RND.pick(hiraganaList);
+        const data = Utils.getData();
+        const mode = data.gameMode || 'あ';
+        const list = HIRAGANA_DATA[mode] || HIRAGANA_DATA['あ'];
+        return Phaser.Math.RND.pick(list);
     }
 
     createBlocks() {
@@ -72,8 +67,11 @@ class SearchScene extends Phaser.Scene {
         const targetPos = positions.pop();
         this.createContent(targetPos.x, targetPos.y, this.targetHiragana.char, true);
 
-        // Place Decoys (2-3 random others)
-        const decoys = ['あ', 'い', 'う', 'え', 'お'].filter(c => c !== this.targetHiragana.char);
+        // Place Decoys using same-mode characters
+        const data = Utils.getData();
+        const mode = data.gameMode || 'あ';
+        const modeList = HIRAGANA_DATA[mode] || HIRAGANA_DATA['あ'];
+        const decoys = modeList.map(h => h.char).filter(c => c !== this.targetHiragana.char);
         for (let i = 0; i < 3; i++) {
             if (positions.length === 0) break;
             const pos = positions.pop();
@@ -124,12 +122,20 @@ class SearchScene extends Phaser.Scene {
 
     createBlock(x, y) {
         const block = this.add.rectangle(x, y, 140, 140, 0x555555);
-        block.setDepth(20); // Above revealed content, below question
+        block.setDepth(20);
         block.setInteractive();
 
-        // Vary block visual
-        const colorValue = 50 + Math.random() * 40;
-        block.fillColor = Phaser.Display.Color.GetColor(colorValue, colorValue, colorValue + 20);
+        // Mode-specific block color tint
+        const data = Utils.getData();
+        const mode = data.gameMode || 'あ';
+        const v = 50 + Math.random() * 40;
+        const modeBlockColor = {
+            'あ': Phaser.Display.Color.GetColor(v, v, v + 25),      // blue-grey
+            'か': Phaser.Display.Color.GetColor(v + 25, v + 10, v), // warm brown
+            'さ': Phaser.Display.Color.GetColor(v, v + 25, v),      // green
+            'た': Phaser.Display.Color.GetColor(v + 15, v, v + 30)  // purple
+        };
+        block.fillColor = modeBlockColor[mode] || modeBlockColor['あ'];
 
         block.on('pointerdown', () => {
             if (!this.isGameActive) return;
@@ -198,24 +204,26 @@ class SearchScene extends Phaser.Scene {
 
         let message = "";
 
+        // Mode-specific reward content
+        const mode = currentData.gameMode || 'あ';
+        const modeCfg = MODE_CONFIG[mode] || MODE_CONFIG['あ'];
+
         // Cycle between 3 reward types
         const rewardType = (currentData.castleLevel + currentData.animals.length + (currentData.floraCount / 5)) % 3;
 
         if (rewardType < 1) {
             currentData.castleLevel = currentData.castleLevel + 1;
             Utils.saveData('castleLevel', currentData.castleLevel);
-            message = "おうちが大きくなったよ！";
+            message = modeCfg.winCastleMsg;
         } else if (rewardType < 2) {
-            const animals = ['🐕', '🐈', '🐇', '🐘', '🦒', '🐎', '🐒', '🐅', '🦓', '🐪'];
-            const newAnimal = Phaser.Math.RND.pick(animals);
-
+            const newAnimal = Phaser.Math.RND.pick(modeCfg.animalPool);
             currentData.animals.push(newAnimal);
             Utils.saveData('animals', currentData.animals);
-            message = "ともだちが遊びにきたよ！";
+            message = modeCfg.winAnimalMsg;
         } else {
             currentData.floraCount = currentData.floraCount + 5;
             Utils.saveData('floraCount', currentData.floraCount);
-            message = "おはなが増えたよ！";
+            message = modeCfg.winFloraMsg;
         }
 
         // Return to Home after delay

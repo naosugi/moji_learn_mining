@@ -5,12 +5,13 @@ class AudioController {
         this.isMuted = false;
         this.masterGain = this.ctx.createGain();
         this.masterGain.connect(this.ctx.destination);
-        this.masterGain.gain.value = 0.15; // Lower global volume to not drown out speech
-        this.defaultVolume = 0.15;
+        this.masterGain.gain.value = 0.4;
+        this.defaultVolume = 0.4;
     }
 
     duck() {
-        this.masterGain.gain.setTargetAtTime(0.05, this.ctx.currentTime, 0.2);
+        // Drop BGM to near-zero so speech synthesis isn't competing
+        this.masterGain.gain.setTargetAtTime(0.005, this.ctx.currentTime, 0.15);
     }
 
     unduck() {
@@ -23,19 +24,25 @@ class AudioController {
         }
     }
 
-    playBGM() {
+    playBGM(mode) {
         if (this.isPlayingBGM) return;
         this.isPlayingBGM = true;
         this.stopBGMFlag = false;
 
-        const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88]; // C Major
-        // Simple melody loop
-        const melody = [
-            { note: 0, dur: 0.5 }, { note: 2, dur: 0.5 }, { note: 4, dur: 1.0 },
-            { note: 2, dur: 0.5 }, { note: 4, dur: 0.5 }, { note: 5, dur: 1.0 },
-            { note: 4, dur: 0.5 }, { note: 2, dur: 0.5 }, { note: 0, dur: 1.0 },
-            { note: 2, dur: 0.5 }, { note: -1, dur: 0.5 } // Rest
-        ];
+        // Use mode-specific melody if available, fall back to C Major
+        let notes, melody;
+        if (mode && typeof MODE_CONFIG !== 'undefined' && MODE_CONFIG[mode]) {
+            notes = MODE_CONFIG[mode].bgmNotes;
+            melody = MODE_CONFIG[mode].bgmMelody;
+        } else {
+            notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88];
+            melody = [
+                { note: 0, dur: 0.5 }, { note: 2, dur: 0.5 }, { note: 4, dur: 1.0 },
+                { note: 2, dur: 0.5 }, { note: 4, dur: 0.5 }, { note: 5, dur: 1.0 },
+                { note: 4, dur: 0.5 }, { note: 2, dur: 0.5 }, { note: 0, dur: 1.0 },
+                { note: 2, dur: 0.5 }, { note: -1, dur: 0.5 }
+            ];
+        }
 
         let noteIndex = 0;
         const playNextNote = () => {

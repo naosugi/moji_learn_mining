@@ -4,8 +4,15 @@ class HomeScene extends Phaser.Scene {
     }
 
     create(params) {
-        if (window.audioController) window.audioController.playBGM();
         const data = Utils.getData();
+        const mode = data.gameMode || 'あ';
+        const modeCfg = MODE_CONFIG[mode] || MODE_CONFIG['あ'];
+
+        // Stop any previous BGM and play mode-specific melody
+        if (window.audioController) {
+            window.audioController.stopBGM();
+            window.audioController.playBGM(mode);
+        }
 
         // --- 0. Day/Night Cycle ---
         // 20% chance of Night Mode, unless forced
@@ -20,13 +27,13 @@ class HomeScene extends Phaser.Scene {
         if (isNight) {
             sky.fillGradientStyle(0x000033, 0x000033, 0x191970, 0x191970, 1);
         } else {
-            sky.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xE0F7FA, 0xE0F7FA, 1);
+            sky.fillGradientStyle(modeCfg.skyTop, modeCfg.skyTop, modeCfg.skyBot, modeCfg.skyBot, 1);
         }
         sky.fillRect(0, 0, 2000, 1500);
 
         // Add distant mountains for depth
         const mountains = this.add.graphics();
-        mountains.fillStyle(isNight ? 0x2E7D32 : 0xAED581, 1); // Darker at night
+        mountains.fillStyle(isNight ? 0x2E7D32 : modeCfg.mountainColor, 1);
         mountains.fillTriangle(0, 1800, 500, 1400, 1000, 1800);
         mountains.fillTriangle(600, 1800, 1200, 1300, 1800, 1800);
         mountains.fillTriangle(1400, 1800, 1800, 1500, 2200, 1800);
@@ -82,7 +89,7 @@ class HomeScene extends Phaser.Scene {
 
         // Add soft hills for ground
         const ground = this.add.graphics();
-        ground.fillStyle(0x90EE90, 1);
+        ground.fillStyle(isNight ? 0x4CAF50 : modeCfg.groundColor, 1);
         // Larger, flatter ellipses for better grounding
         ground.fillEllipse(1000, 1850, 3000, 700);
         ground.fillEllipse(300, 1800, 1200, 400);
@@ -152,6 +159,9 @@ class HomeScene extends Phaser.Scene {
             this.createDebugUI();
         }
 
+        // --- 9. Mode Selector ---
+        this.createModeSelector(mode);
+
         // Transition logic (Castle area)
         this.castleContainer.setInteractive(new Phaser.Geom.Rectangle(-120, -200, 240, 250), Phaser.Geom.Rectangle.Contains);
         this.castleContainer.on('pointerdown', (p, x, y, event) => {
@@ -202,7 +212,7 @@ class HomeScene extends Phaser.Scene {
             {
                 text: 'ZUKAN', color: '#ff00ff', action: () => {
                     const d = Utils.getData();
-                    d.collectedHiragana = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と', 'な', 'に', 'ぬ', 'ね', 'の', 'は', 'ひ', 'ふ', 'へ', 'ほ', 'ま', 'み', 'む', 'め', 'も', 'や', 'ゆ', 'よ', 'ら', 'り', 'る', 'れ', 'ろ', 'わ', 'を', 'ん'];
+                    d.collectedHiragana = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と'];
                     Utils.saveData('collectedHiragana', d.collectedHiragana);
                     Utils.speak('全部覚えたよ');
                 }
@@ -557,9 +567,11 @@ class HomeScene extends Phaser.Scene {
 
     createNature() {
         const data = Utils.getData();
+        const mode = data.gameMode || 'あ';
+        const modeCfg = MODE_CONFIG[mode] || MODE_CONFIG['あ'];
         const floraCount = data.floraCount;
-        const totalToSpawn = 2 + floraCount; // Start even smaller
-        const items = ['🌲', '🌳', '🌷', '🌻', '🌼', '🍀', '🍓'];
+        const totalToSpawn = 2 + floraCount;
+        const items = modeCfg.floraItems;
 
         for (let i = 0; i < totalToSpawn; i++) {
             const x = Math.random() * 2000;
@@ -614,16 +626,25 @@ class HomeScene extends Phaser.Scene {
         this.castleContainer = this.add.container(x, y);
         this.castlePoint = this.add.circle(x, y, 5, 0xff0000).setVisible(false);
 
+        // Mode-specific wall/roof colors
+        const data = Utils.getData();
+        const mode = data.gameMode || 'あ';
+        const modeCfg = MODE_CONFIG[mode] || MODE_CONFIG['あ'];
+        const wallColor = isNight ? 0xB8B8B8 : modeCfg.wallColor;
+        const wallColorDark = isNight ? 0xA8A8A8 : modeCfg.wallColorDark;
+        const roofColor = isNight ? 0xCC3333 : modeCfg.roofColor;
+        const roofColorLight = isNight ? 0xFF6666 : modeCfg.roofColorLight;
+
         const graphics = this.add.graphics();
         // Visible shadow for depth
         graphics.fillStyle(0x000000, 0.15);
         graphics.fillEllipse(0, -5, 220, 50);
 
-        graphics.fillStyle(0xE0E0E0, 1);
+        graphics.fillStyle(wallColor, 1);
         graphics.fillRect(-60, -120, 120, 120);
         graphics.lineStyle(4, 0x333333, 1);
         graphics.strokeRect(-60, -120, 120, 120);
-        graphics.fillStyle(0xFF5252, 1);
+        graphics.fillStyle(roofColor, 1);
         graphics.fillTriangle(-75, -120, 75, -120, 0, -210);
         graphics.strokeTriangle(-75, -120, 75, -120, 0, -210);
         graphics.fillStyle(0x795548, 1);
@@ -631,29 +652,27 @@ class HomeScene extends Phaser.Scene {
         graphics.strokeRect(-22, -45, 44, 45);
 
         if (level >= 2) {
-            graphics.fillStyle(0xD0D0D0, 1);
+            graphics.fillStyle(wallColorDark, 1);
             graphics.fillRect(-140, -80, 80, 80);
             graphics.strokeRect(-140, -80, 80, 80);
-            graphics.fillStyle(0xFF8A80, 1);
+            graphics.fillStyle(roofColorLight, 1);
             graphics.fillTriangle(-150, -80, -50, -80, -100, -140);
             graphics.strokeTriangle(-150, -80, -50, -80, -100, -140);
         }
         if (level >= 3) {
-            graphics.fillStyle(0xD0D0D0, 1);
+            graphics.fillStyle(wallColorDark, 1);
             graphics.fillRect(60, -80, 80, 80);
             graphics.strokeRect(60, -80, 80, 80);
-            graphics.fillStyle(0xFF8A80, 1);
+            graphics.fillStyle(roofColorLight, 1);
             graphics.fillTriangle(50, -80, 150, -80, 100, -140);
             graphics.strokeTriangle(50, -80, 150, -80, 100, -140);
         }
         if (level >= 4) {
-            // Replace simple yellow roof with fancy image
             const roof = this.add.image(0, -180, 'castle_roof').setOrigin(0.5);
             roof.setDisplaySize(180, 150);
             this.castleContainer.add(roof);
         }
         if (level >= 5) {
-            // Animated flag image
             const flag = this.add.image(25, -280, 'castle_flag').setOrigin(0.5);
             flag.setDisplaySize(100, 80);
             this.castleContainer.add(flag);
@@ -689,14 +708,284 @@ class HomeScene extends Phaser.Scene {
         const text = this.add.text(0, 40, '👑', { fontSize: '56px' }).setOrigin(0.5);
         this.castleContainer.add(text);
 
+        // Level 6+: extended castle structure (pure graphics, no images)
+        this.createCastleExtensions(level, isNight, wallColor, wallColorDark, roofColor, roofColorLight);
+
+        // Scale the entire castle based on level (grows up to 2x)
+        const castleScale = Math.min(1 + (level - 1) * 0.04, 2.0);
+        this.castleContainer.setScale(castleScale);
+
+        // Breathing animation (proportional to castle scale)
         this.tweens.add({
             targets: this.castleContainer,
-            scaleX: 1.03,
-            scaleY: 1.03,
+            scaleX: castleScale + 0.03,
+            scaleY: castleScale + 0.03,
             yoyo: true,
             repeat: -1,
             duration: 1800,
             ease: 'Sine.easeInOut'
+        });
+    }
+
+    createCastleExtensions(level, isNight, wallColor, wallColorDark, roofColor, roofColorLight) {
+        const container = this.castleContainer;
+        const flagColors = [0xFF0000, 0xFFFF00, 0x00FF00, 0x0000FF, 0xFF00FF, 0xFF6600, 0x00FFFF];
+
+        // Level 6: Battlements on left + right towers
+        if (level >= 6) {
+            const g6 = this.add.graphics();
+            g6.fillStyle(wallColor, 1);
+            g6.lineStyle(2, 0x333333, 1);
+            // Left tower merlons (tower top is at y=-80)
+            for (let i = 0; i < 3; i++) {
+                g6.fillRect(-138 + i * 26, -98, 18, 20);
+                g6.strokeRect(-138 + i * 26, -98, 18, 20);
+            }
+            // Right tower merlons
+            for (let i = 0; i < 3; i++) {
+                g6.fillRect(62 + i * 26, -98, 18, 20);
+                g6.strokeRect(62 + i * 26, -98, 18, 20);
+            }
+            // Random small window on each tower
+            const winColor = isNight ? 0xFF9800 : 0x87CEEB;
+            g6.fillStyle(winColor, 0.9);
+            g6.fillRect(-118, -70, 18, 22);
+            g6.fillRect(100, -70, 18, 22);
+            container.add(g6);
+        }
+
+        // Level 7: Third tower (far left)
+        if (level >= 7) {
+            const g7 = this.add.graphics();
+            g7.fillStyle(wallColor, 1);
+            g7.lineStyle(3, 0x333333, 1);
+            g7.fillRect(-230, -100, 70, 100);
+            g7.strokeRect(-230, -100, 70, 100);
+            g7.fillStyle(roofColor, 1);
+            g7.fillTriangle(-240, -100, -150, -100, -195, -170);
+            g7.strokeTriangle(-240, -100, -150, -100, -195, -170);
+            // Battlements
+            for (let i = 0; i < 3; i++) {
+                g7.fillStyle(wallColor, 1);
+                g7.fillRect(-228 + i * 24, -118, 16, 20);
+                g7.strokeRect(-228 + i * 24, -118, 16, 20);
+            }
+            container.add(g7);
+        }
+
+        // Level 8: Fourth tower (far right)
+        if (level >= 8) {
+            const g8 = this.add.graphics();
+            g8.fillStyle(wallColor, 1);
+            g8.lineStyle(3, 0x333333, 1);
+            g8.fillRect(160, -100, 70, 100);
+            g8.strokeRect(160, -100, 70, 100);
+            g8.fillStyle(roofColor, 1);
+            g8.fillTriangle(150, -100, 240, -100, 195, -170);
+            g8.strokeTriangle(150, -100, 240, -100, 195, -170);
+            for (let i = 0; i < 3; i++) {
+                g8.fillStyle(wallColor, 1);
+                g8.fillRect(162 + i * 24, -118, 16, 20);
+                g8.strokeRect(162 + i * 24, -118, 16, 20);
+            }
+            container.add(g8);
+        }
+
+        // Level 9: Moat in front (added to back of container)
+        if (level >= 9) {
+            const g9 = this.add.graphics();
+            g9.fillStyle(0x4FC3F7, 0.7);
+            g9.fillEllipse(0, 30, 380, 55);
+            g9.lineStyle(3, 0x0288D1, 0.9);
+            g9.strokeEllipse(0, 30, 380, 55);
+            // Small fish emoji in the moat
+            const fish = this.add.text(Phaser.Math.Between(-60, 60), 30, '🐟', { fontSize: '24px' }).setOrigin(0.5);
+            this.tweens.add({
+                targets: fish,
+                x: fish.x + (Math.random() > 0.5 ? 80 : -80),
+                duration: 3000,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+            container.addAt(g9, 0);
+            container.addAt(fish, 1);
+        }
+
+        // Level 10: Connecting outer walls
+        if (level >= 10) {
+            const g10 = this.add.graphics();
+            g10.fillStyle(wallColorDark, 1);
+            g10.lineStyle(3, 0x333333, 1);
+            // Left: connect left tower to far-left tower
+            g10.fillRect(-230, -45, 90, 45);
+            g10.strokeRect(-230, -45, 90, 45);
+            // Right: connect right tower to far-right tower
+            g10.fillRect(140, -45, 90, 45);
+            g10.strokeRect(140, -45, 90, 45);
+            container.add(g10);
+        }
+
+        // Level 11: Pennant flags on all towers (random colors each visit)
+        if (level >= 11) {
+            const g11 = this.add.graphics();
+            const polePositions = [
+                [0, -215],     // Center
+                [-100, -148],  // Left tower
+                [100, -148],   // Right tower
+                [-195, -175],  // Far-left tower
+                [195, -175]    // Far-right tower
+            ];
+            polePositions.forEach(([px, py]) => {
+                const col = Phaser.Math.RND.pick(flagColors);
+                g11.fillStyle(col, 1);
+                g11.fillTriangle(px, py, px + 28, py - 10, px, py - 25);
+                g11.lineStyle(2, 0x5D4037, 1);
+                g11.beginPath();
+                g11.moveTo(px, py);
+                g11.lineTo(px, py + 35);
+                g11.strokePath();
+            });
+            container.add(g11);
+        }
+
+        // Level 12: Grand outer gate towers
+        if (level >= 12) {
+            const g12 = this.add.graphics();
+            g12.fillStyle(wallColor, 1);
+            g12.lineStyle(3, 0x333333, 1);
+            // Massive outer pillars
+            g12.fillRect(-300, -90, 60, 90);
+            g12.strokeRect(-300, -90, 60, 90);
+            g12.fillRect(240, -90, 60, 90);
+            g12.strokeRect(240, -90, 60, 90);
+            // Outer pillar roofs
+            g12.fillStyle(roofColor, 1);
+            g12.fillTriangle(-310, -90, -230, -90, -270, -165);
+            g12.strokeTriangle(-310, -90, -230, -90, -270, -165);
+            g12.fillTriangle(230, -90, 310, -90, 270, -165);
+            g12.strokeTriangle(230, -90, 310, -90, 270, -165);
+            // Connecting low wall
+            g12.fillStyle(wallColorDark, 0.8);
+            g12.fillRect(-240, -50, 480, 50);
+            g12.lineStyle(2, 0x333333, 0.8);
+            g12.strokeRect(-240, -50, 480, 50);
+            container.addAt(g12, 0); // behind inner elements
+        }
+
+        // Level 13: Gem/sparkle decorations on key positions
+        if (level >= 13) {
+            const gemEmoji = ['💎', '⭐', '🌟', '✨'];
+            const gemPos = [
+                [0, -230], [-100, -158], [100, -158],
+                [-195, -180], [195, -180],
+                [-50, -145], [50, -145]
+            ];
+            gemPos.forEach(([gx, gy]) => {
+                const gem = this.add.text(gx, gy, Phaser.Math.RND.pick(gemEmoji), { fontSize: '22px' }).setOrigin(0.5);
+                container.add(gem);
+                this.tweens.add({
+                    targets: gem,
+                    y: gy - 10,
+                    alpha: { from: 0.6, to: 1 },
+                    duration: 500 + Math.random() * 700,
+                    yoyo: true,
+                    repeat: -1
+                });
+            });
+        }
+
+        // Level 14: Tall super-spires on center + side towers
+        if (level >= 14) {
+            const g14 = this.add.graphics();
+            g14.fillStyle(roofColor, 1);
+            g14.lineStyle(2, 0x333333, 1);
+            // Very tall thin spire on center
+            g14.fillTriangle(-20, -210, 20, -210, 0, -330);
+            g14.strokeTriangle(-20, -210, 20, -210, 0, -330);
+            // Spires on side towers
+            g14.fillTriangle(-108, -140, -92, -140, -100, -220);
+            g14.fillTriangle(92, -140, 108, -140, 100, -220);
+            container.add(g14);
+        }
+
+        // Level 15: Orbiting sparkle ring
+        if (level >= 15) {
+            const sparkEmoji = ['🌟', '✨', '💫', '⭐'];
+            for (let i = 0; i < 6; i++) {
+                const angle0 = (i / 6) * Math.PI * 2;
+                const r = 180;
+                const sx = Math.cos(angle0) * r;
+                const sy = Math.sin(angle0) * r - 110;
+                const sp = this.add.text(sx, sy, Phaser.Math.RND.pick(sparkEmoji), { fontSize: '28px' }).setOrigin(0.5).setAlpha(0.85);
+                container.add(sp);
+                // Orbit: move to next position in the ring
+                const angle1 = ((i + 1) / 6) * Math.PI * 2;
+                this.tweens.add({
+                    targets: sp,
+                    x: Math.cos(angle1) * r,
+                    y: Math.sin(angle1) * r - 110,
+                    duration: 3000 + i * 300,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+            }
+        }
+
+        // Random bonus decoration: sometimes add a seasonal touch (level 6+)
+        if (level >= 6 && Math.random() < 0.4) {
+            const bonusEmojis = ['🌈', '🎆', '🎇', '🏳️', '🪄'];
+            const bonus = this.add.text(
+                (Math.random() - 0.5) * 200,
+                -250 - Math.random() * 80,
+                Phaser.Math.RND.pick(bonusEmojis),
+                { fontSize: '32px' }
+            ).setOrigin(0.5).setAlpha(0.8);
+            container.add(bonus);
+            this.tweens.add({
+                targets: bonus,
+                y: bonus.y - 20,
+                alpha: { from: 0.5, to: 1 },
+                duration: 2000 + Math.random() * 1000,
+                yoyo: true,
+                repeat: -1
+            });
+        }
+    }
+
+    createModeSelector(currentMode) {
+        const modes = ['あ', 'か', 'さ', 'た'];
+        const sel = this.add.container(0, 0).setScrollFactor(0).setDepth(1000);
+
+        modes.forEach((m, i) => {
+            const cfg = MODE_CONFIG[m];
+            const btnX = 80 + i * 125;
+            const btnY = 80;
+            const isActive = m === currentMode;
+
+            const bg = this.add.rectangle(btnX, btnY, 108, 54, isActive ? 0xFFD700 : 0x222222, isActive ? 1 : 0.75)
+                .setInteractive()
+                .setStrokeStyle(2, isActive ? 0xFFAA00 : 0x888888);
+
+            const label = this.add.text(btnX, btnY, cfg.label, {
+                fontSize: '26px',
+                color: isActive ? '#333333' : '#ffffff',
+                fontFamily: '"Hiragino Maru Gothic ProN"',
+                fontStyle: isActive ? 'bold' : 'normal'
+            }).setOrigin(0.5);
+
+            bg.on('pointerdown', (p, lx, ly, event) => {
+                event.stopPropagation();
+                if (m === currentMode) return;
+                Utils.saveData('gameMode', m);
+                this.cameras.main.fadeOut(400, 255, 255, 255);
+                this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+                    this.scene.restart();
+                });
+            });
+
+            sel.add([bg, label]);
         });
     }
 

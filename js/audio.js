@@ -155,6 +155,19 @@ class AudioController {
                 osc.stop(now);
                 this.playTone(2000 + Math.random() * 1000, 0.05, 0, 'sine');
                 break;
+
+            case 'eat':
+                // Satisfying munch: short downward sweep
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(380, now);
+                osc.frequency.exponentialRampToValueAtTime(130, now + 0.13);
+                gain.gain.setValueAtTime(0.7, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+                osc.start(now);
+                osc.stop(now + 0.13);
+                // Second smaller bite
+                this.playTone(280, 0.08, 0.15, 'triangle');
+                break;
         }
     }
 

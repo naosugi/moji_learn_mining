@@ -104,8 +104,9 @@ class HomeScene extends Phaser.Scene {
         }
         this.createClouds();
 
-        // --- 3. Nature (Trees and Flowers) ---
+        // --- 3. Nature (Trees, Flowers and Food) ---
         this.createNature();
+        this.createFoods();
 
         // --- 4. Castle ---
         const baseLevel = data.castleLevel;
@@ -598,6 +599,81 @@ class HomeScene extends Phaser.Scene {
                             repeat: 2
                         });
                     }
+                });
+            });
+        }
+    }
+
+    createFoods() {
+        const data = Utils.getData();
+        const mode = data.gameMode || 'あ';
+        const modeCfg = MODE_CONFIG[mode] || MODE_CONFIG['あ'];
+        const foods = modeCfg.foodItems;
+        const reactionEmoji = ['❤️', '😋', '✨', '🌟', '💫'];
+        const count = 4 + Math.floor(Math.random() * 3); // 4〜6個
+
+        for (let i = 0; i < count; i++) {
+            const x = 150 + Math.random() * 1700;
+            const y = 1570 + Math.random() * 220;
+            const emoji = Phaser.Math.RND.pick(foods);
+
+            const food = this.add.text(x, y, emoji, { fontSize: '54px' }).setOrigin(0.5, 1);
+            food.setInteractive();
+            food.setDepth(y + 2); // flora より少し手前
+
+            // ふんわり浮いて存在をアピール
+            this.tweens.add({
+                targets: food,
+                y: food.y - 14,
+                duration: 1100 + Math.random() * 900,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut',
+                delay: Math.random() * 1200
+            });
+
+            food.on('pointerdown', (p, lx, ly, event) => {
+                event.stopPropagation();
+                if (food.isEaten) return;
+                food.isEaten = true;
+
+                // 食べ物別の音声
+                const voice = FOOD_REACTIONS[emoji] || 'おいしい！';
+                Utils.speak(voice);
+                window.audioController.playSE('eat');
+
+                // 5種類のリアクションが飛び出す
+                for (let j = 0; j < 5; j++) {
+                    const rx = food.x + (Math.random() - 0.5) * 90;
+                    const ry = food.y - food.height * 0.5;
+                    const r = this.add.text(rx, ry, Phaser.Math.RND.pick(reactionEmoji), {
+                        fontSize: '30px'
+                    }).setOrigin(0.5).setDepth(2000);
+
+                    this.tweens.add({
+                        targets: r,
+                        y: ry - 90 - Math.random() * 70,
+                        x: rx + (Math.random() - 0.5) * 70,
+                        alpha: 0,
+                        scale: 1.5,
+                        duration: 850 + Math.random() * 450,
+                        ease: 'Sine.easeOut',
+                        delay: j * 60,
+                        onComplete: () => r.destroy()
+                    });
+                }
+
+                // 食べ物が弾んで消える
+                this.tweens.add({
+                    targets: food,
+                    scaleX: 1.5,
+                    scaleY: 1.5,
+                    alpha: 0,
+                    y: food.y - 70,
+                    angle: 20,
+                    duration: 650,
+                    ease: 'Back.easeIn',
+                    onComplete: () => food.destroy()
                 });
             });
         }

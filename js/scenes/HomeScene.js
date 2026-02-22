@@ -1032,7 +1032,6 @@ class HomeScene extends Phaser.Scene {
 
     createModeSelector(currentMode) {
         const modes = ['あ', 'か', 'さ', 'た'];
-        const sel = this.add.container(0, 0).setScrollFactor(0).setDepth(1000);
 
         modes.forEach((m, i) => {
             const cfg = MODE_CONFIG[m];
@@ -1042,14 +1041,16 @@ class HomeScene extends Phaser.Scene {
 
             const bg = this.add.rectangle(btnX, btnY, 108, 54, isActive ? 0xFFD700 : 0x222222, isActive ? 1 : 0.75)
                 .setInteractive()
+                .setScrollFactor(0)
+                .setDepth(1000)
                 .setStrokeStyle(2, isActive ? 0xFFAA00 : 0x888888);
 
-            const label = this.add.text(btnX, btnY, cfg.label, {
+            this.add.text(btnX, btnY, cfg.label, {
                 fontSize: '26px',
                 color: isActive ? '#333333' : '#ffffff',
                 fontFamily: '"Hiragino Maru Gothic ProN"',
                 fontStyle: isActive ? 'bold' : 'normal'
-            }).setOrigin(0.5);
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(1001);
 
             bg.on('pointerdown', (p, lx, ly, event) => {
                 event.stopPropagation();
@@ -1060,8 +1061,6 @@ class HomeScene extends Phaser.Scene {
                     this.scene.restart();
                 });
             });
-
-            sel.add([bg, label]);
         });
     }
 

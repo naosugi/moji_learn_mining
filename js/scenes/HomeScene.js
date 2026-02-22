@@ -215,7 +215,7 @@ class HomeScene extends Phaser.Scene {
             {
                 text: 'ZUKAN', color: '#ff00ff', action: () => {
                     const d = Utils.getData();
-                    d.collectedHiragana = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と'];
+                    d.collectedHiragana = ['あ', 'い', 'う', 'え', 'お', 'か', 'き', 'く', 'け', 'こ', 'さ', 'し', 'す', 'せ', 'そ', 'た', 'ち', 'つ', 'て', 'と', 'な', 'に', 'ぬ', 'ね', 'の', 'は', 'ひ', 'ふ', 'へ', 'ほ', 'ま', 'み', 'む', 'め', 'も', 'や', 'ゆ', 'よ', 'わ', 'を', 'ら', 'り', 'る', 'れ', 'ろ'];
                     Utils.saveData('collectedHiragana', d.collectedHiragana);
                     Utils.speak('全部覚えたよ');
                 }

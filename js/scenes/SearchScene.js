@@ -130,10 +130,15 @@ class SearchScene extends Phaser.Scene {
         const mode = data.gameMode || 'あ';
         const v = 50 + Math.random() * 40;
         const modeBlockColor = {
-            'あ': Phaser.Display.Color.GetColor(v, v, v + 25),      // blue-grey
-            'か': Phaser.Display.Color.GetColor(v + 25, v + 10, v), // warm brown
-            'さ': Phaser.Display.Color.GetColor(v, v + 25, v),      // green
-            'た': Phaser.Display.Color.GetColor(v + 15, v, v + 30)  // purple
+            'あ': Phaser.Display.Color.GetColor(v, v, v + 25),         // blue-grey
+            'か': Phaser.Display.Color.GetColor(v + 25, v + 10, v),    // warm brown
+            'さ': Phaser.Display.Color.GetColor(v, v + 25, v),         // green
+            'た': Phaser.Display.Color.GetColor(v + 15, v, v + 30),    // purple
+            'な': Phaser.Display.Color.GetColor(v, v + 20, v + 30),    // cyan/water
+            'は': Phaser.Display.Color.GetColor(v + 30, v + 15, v),    // warm orange
+            'ま': Phaser.Display.Color.GetColor(v + 25, v + 10, v - 10), // amber
+            'や': Phaser.Display.Color.GetColor(v + 10, v + 10, v + 30), // icy blue
+            'ら': Phaser.Display.Color.GetColor(v + 30, v, v + 20)     // pink
         };
         block.fillColor = modeBlockColor[mode] || modeBlockColor['あ'];
 

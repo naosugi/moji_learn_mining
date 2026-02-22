@@ -33,6 +33,17 @@ const FOOD_REACTIONS = {
     '🧁': 'カップケーキかわいい！',
     '🍭': 'ぺろぺろキャンディ！',
     '🍬': 'あめちゃんあまい！',
+    // パン・洋食
+    '🍯': 'はちみつあまい！',
+    '🧇': 'ワッフルふわふわ！',
+    '🥞': 'パンケーキやわらかい！',
+    '🍞': 'パンほかほか！',
+    '🍪': 'クッキーさくさく！',
+    '🥐': 'クロワッサンサクサク！',
+    // 秋・冬
+    '🍠': 'やきいもほくほく！',
+    '🍵': 'おちゃあたたかい！',
+    '🥛': 'ぎゅうにゅうおいしい！',
 };
 
 // === Hiragana Data per mode ===
@@ -64,6 +75,41 @@ const HIRAGANA_DATA = {
         { char: 'つ', word: 'つきさん' },
         { char: 'て', word: 'てんとうむしさん' },
         { char: 'と', word: 'とりさん' }
+    ],
+    'な': [
+        { char: 'な', word: 'なすさん' },
+        { char: 'に', word: 'にじさん' },
+        { char: 'ぬ', word: 'ぬいぐるみさん' },
+        { char: 'ね', word: 'ねこさん' },
+        { char: 'の', word: 'のりものさん' }
+    ],
+    'は': [
+        { char: 'は', word: 'はなさん' },
+        { char: 'ひ', word: 'ひよこさん' },
+        { char: 'ふ', word: 'ふねさん' },
+        { char: 'へ', word: 'へびさん' },
+        { char: 'ほ', word: 'ほしさん' }
+    ],
+    'ま': [
+        { char: 'ま', word: 'まくらさん' },
+        { char: 'み', word: 'みかんさん' },
+        { char: 'む', word: 'むしさん' },
+        { char: 'め', word: 'めがねさん' },
+        { char: 'も', word: 'もぐらさん' }
+    ],
+    'や': [
+        { char: 'や', word: 'やぎさん' },
+        { char: 'ゆ', word: 'ゆきさん' },
+        { char: 'よ', word: 'よるさん' },
+        { char: 'わ', word: 'わにさん' },
+        { char: 'を', word: 'おまつり' }
+    ],
+    'ら': [
+        { char: 'ら', word: 'らいおんさん' },
+        { char: 'り', word: 'りすさん' },
+        { char: 'る', word: 'るびーさん' },
+        { char: 'れ', word: 'れもんさん' },
+        { char: 'ろ', word: 'ろけっとさん' }
     ]
 };
 
@@ -151,6 +197,107 @@ const MODE_CONFIG = {
         winCastleMsg: 'おしろがゆめのくになったよ！',
         winAnimalMsg: 'きれいなとりがきたよ！',
         winFloraMsg: 'まほうのはながさいたよ！'
+    },
+    'な': {
+        label: 'な行',
+        skyTop: 0x29B6F6, skyBot: 0xE1F5FE,
+        mountainColor: 0x0277BD,
+        groundColor: 0xB3E5FC,
+        wallColor: 0xC8E6FA, wallColorDark: 0xB0D4E8,
+        roofColor: 0x0288D1, roofColorLight: 0x4FC3F7,
+        floraItems: ['🌊', '🐚', '🪸', '🌿', '🪴', '🌾', '🍃', '💧', '🫧'],
+        animalPool: ['🐠', '🐟', '🐬', '🦭', '🐋', '🦀', '🦞', '🐙'],
+        bgmNotes: [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33],
+        bgmMelody: [
+            { note: 0, dur: 0.4 }, { note: 1, dur: 0.4 }, { note: 2, dur: 0.4 }, { note: 4, dur: 0.8 },
+            { note: 3, dur: 0.4 }, { note: 2, dur: 0.4 }, { note: 1, dur: 0.8 },
+            { note: 0, dur: 0.6 }, { note: -1, dur: 0.4 }
+        ],
+        foodItems: ['🍣', '🍡', '🍜', '🍙', '🍢', '🍘', '🍚'],
+        winCastleMsg: 'おしろがうみのそばになったよ！',
+        winAnimalMsg: 'うみのなかまがきたよ！',
+        winFloraMsg: 'うみのしぜんがふえたよ！'
+    },
+    'は': {
+        label: 'は行',
+        skyTop: 0xFF8F00, skyBot: 0xFFF8E1,
+        mountainColor: 0xE65100,
+        groundColor: 0xFFCC80,
+        wallColor: 0xFFECB3, wallColorDark: 0xFFDE7D,
+        roofColor: 0xF57F17, roofColorLight: 0xFFCA28,
+        floraItems: ['🌻', '🌼', '🌸', '🌺', '🌹', '🌷', '🪷', '💐', '🌾'],
+        animalPool: ['🐝', '🦋', '🐦', '🦚', '🦜', '🦩', '🕊️', '🦤'],
+        bgmNotes: [329.63, 369.99, 415.30, 440.00, 493.88, 554.37, 587.33],
+        bgmMelody: [
+            { note: 0, dur: 0.3 }, { note: 2, dur: 0.3 }, { note: 4, dur: 0.3 }, { note: 6, dur: 0.6 },
+            { note: 5, dur: 0.3 }, { note: 3, dur: 0.3 }, { note: 4, dur: 0.6 },
+            { note: 2, dur: 0.3 }, { note: 0, dur: 0.3 }, { note: -1, dur: 0.5 }
+        ],
+        foodItems: ['🍯', '🧇', '🥞', '🍞', '🍪', '🥐', '🧁'],
+        winCastleMsg: 'おしろがはなばたけになったよ！',
+        winAnimalMsg: 'はなのともだちがきたよ！',
+        winFloraMsg: 'はながいっぱいさいたよ！'
+    },
+    'ま': {
+        label: 'ま行',
+        skyTop: 0xE65100, skyBot: 0xFFE0B2,
+        mountainColor: 0xBF360C,
+        groundColor: 0xFFB74D,
+        wallColor: 0xFFE0B2, wallColorDark: 0xFFCC80,
+        roofColor: 0xBF360C, roofColorLight: 0xE64A19,
+        floraItems: ['🍁', '🍂', '🍄', '🌾', '🌰', '🎑', '🪴', '🌿', '🍃'],
+        animalPool: ['🦊', '🦡', '🦦', '🐿️', '🦔', '🐻', '🦝', '🐾'],
+        bgmNotes: [220.00, 246.94, 261.63, 293.66, 329.63, 349.23, 392.00],
+        bgmMelody: [
+            { note: 5, dur: 0.5 }, { note: 4, dur: 0.5 }, { note: 3, dur: 1.0 },
+            { note: 2, dur: 0.5 }, { note: 1, dur: 0.5 }, { note: 0, dur: 0.5 }, { note: -1, dur: 0.3 },
+            { note: 3, dur: 0.5 }, { note: 5, dur: 0.5 }, { note: 6, dur: 1.0 },
+            { note: -1, dur: 0.5 }
+        ],
+        foodItems: ['🍠', '🌰', '🍡', '🍱', '🍘', '🍵', '🥛'],
+        winCastleMsg: 'おしろがもみじにかこまれたよ！',
+        winAnimalMsg: 'もりのなかまがきたよ！',
+        winFloraMsg: 'もみじがきれいになったよ！'
+    },
+    'や': {
+        label: 'やわ行',
+        skyTop: 0x1A237E, skyBot: 0x90CAF9,
+        mountainColor: 0xC5CAE9,
+        groundColor: 0xE8EAF6,
+        wallColor: 0xF5F5FF, wallColorDark: 0xE8EAF6,
+        roofColor: 0x3949AB, roofColorLight: 0x7986CB,
+        floraItems: ['🎄', '🌲', '🌿', '🍃', '🪴', '🌾', '🎋', '🎍', '❄️'],
+        animalPool: ['🐧', '🦭', '🐼', '🐨', '🐻‍❄️', '🦫', '🐑', '🦌'],
+        bgmNotes: [392.00, 440.00, 493.88, 523.25, 587.33, 659.25, 783.99],
+        bgmMelody: [
+            { note: 0, dur: 0.3 }, { note: 2, dur: 0.3 }, { note: 4, dur: 0.3 }, { note: 5, dur: 0.6 },
+            { note: 6, dur: 0.3 }, { note: 5, dur: 0.3 }, { note: 4, dur: 0.6 },
+            { note: 2, dur: 0.3 }, { note: 0, dur: 0.3 }, { note: -1, dur: 0.5 }
+        ],
+        foodItems: ['🍵', '🍢', '🍜', '🍙', '🥛', '🍡', '🍬'],
+        winCastleMsg: 'おしろがゆきぐにになったよ！',
+        winAnimalMsg: 'ふゆのなかまがきたよ！',
+        winFloraMsg: 'ゆきのもようがふえたよ！'
+    },
+    'ら': {
+        label: 'ら行',
+        skyTop: 0xE91E63, skyBot: 0xFCE4EC,
+        mountainColor: 0xC2185B,
+        groundColor: 0xF48FB1,
+        wallColor: 0xFCE4EC, wallColorDark: 0xF8BBD0,
+        roofColor: 0x880E4F, roofColorLight: 0xE91E63,
+        floraItems: ['🌈', '🌸', '🌺', '🌻', '💐', '🪷', '🌷', '🌹', '🌼'],
+        animalPool: ['🦄', '🦋', '🦚', '🦜', '🦩', '🕊️', '🦢', '🐉'],
+        bgmNotes: [261.63, 329.63, 392.00, 440.00, 523.25, 659.25, 783.99],
+        bgmMelody: [
+            { note: 0, dur: 0.25 }, { note: 1, dur: 0.25 }, { note: 2, dur: 0.25 }, { note: 3, dur: 0.25 }, { note: 4, dur: 0.5 },
+            { note: 5, dur: 0.25 }, { note: 4, dur: 0.25 }, { note: 3, dur: 0.25 }, { note: 2, dur: 0.25 }, { note: 1, dur: 0.5 },
+            { note: 0, dur: 0.5 }, { note: -1, dur: 0.5 }
+        ],
+        foodItems: ['🍭', '🍩', '🍫', '🧁', '🍬', '🍰', '🍦'],
+        winCastleMsg: 'おしろがにじいろになったよ！',
+        winAnimalMsg: 'にじのなかまがきたよ！',
+        winFloraMsg: 'にじのはなばたけになったよ！'
     }
 };
 

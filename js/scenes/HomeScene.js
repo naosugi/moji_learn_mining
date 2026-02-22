@@ -132,7 +132,7 @@ class HomeScene extends Phaser.Scene {
 
         // Input
         this.input.on('pointerdown', (pointer) => {
-            // Create sparkle at tap location
+            if (this.modeModalOpen || this.isCollectionOpen) return;
             this.createTapSparkle(pointer.worldX, pointer.worldY);
         });
 
@@ -145,10 +145,12 @@ class HomeScene extends Phaser.Scene {
         this.input.addPointer(1);
 
         // --- 7. Collection Book (Zukan) ---
-        const bookBtn = this.add.text(1880, 80, '📖', { fontSize: '80px' })
+        const cw = this.cameras.main.width;
+        const bookBtn = this.add.text(cw - 50, 50, '📖', { fontSize: '60px' })
             .setOrigin(0.5)
             .setInteractive()
-            .setScrollFactor(0); // Fix to screen
+            .setScrollFactor(0)
+            .setDepth(1000);
 
         bookBtn.on('pointerdown', () => {
             this.toggleCollection();
@@ -160,8 +162,8 @@ class HomeScene extends Phaser.Scene {
             this.createDebugUI();
         }
 
-        // --- 9. Mode Selector ---
-        this.createModeSelector(mode);
+        // --- 9. Mode Badge ---
+        this.createModeBadge(mode);
 
         // Transition logic (Castle area)
         this.castleContainer.setInteractive(new Phaser.Geom.Rectangle(-120, -200, 240, 250), Phaser.Geom.Rectangle.Contains);
@@ -247,128 +249,121 @@ class HomeScene extends Phaser.Scene {
 
     toggleCollection() {
         if (this.isCollectionOpen) {
-            this.collectionGroup.destroy(true);
+            (this._collectionObjs || []).forEach(o => o.destroy());
+            this._collectionObjs = [];
             this.isCollectionOpen = false;
             return;
         }
 
         this.isCollectionOpen = true;
-        this.collectionGroup = this.add.group();
+        this._collectionObjs = [];
+        if (!this.activeCollectionTab) {
+            this.activeCollectionTab = Utils.getData().gameMode || Object.keys(MODE_CONFIG)[0];
+        }
+
+        const track = (obj) => { this._collectionObjs.push(obj); return obj; };
+        const cw = this.cameras.main.width;
+        const ch = this.cameras.main.height;
+        const data = Utils.getData();
+        const collected = data.collectedHiragana || [];
+        const modes = Object.keys(MODE_CONFIG);
 
         // Overlay
-        const overlay = this.add.rectangle(1000, 1000, 2000, 2000, 0x000000, 0.8)
-            .setInteractive()
-            .setScrollFactor(0);
-        this.collectionGroup.add(overlay);
-
-        // Close button
-        const closeBtn = this.add.text(1800, 200, '✖️', { fontSize: '100px', color: '#ffffff' })
-            .setOrigin(0.5)
-            .setInteractive()
-            .setScrollFactor(0);
-
-        closeBtn.on('pointerdown', () => {
-            this.toggleCollection();
-        });
-        this.collectionGroup.add(closeBtn);
+        track(this.add.rectangle(cw / 2, ch / 2, cw, ch, 0x000000, 0.82)
+            .setScrollFactor(0).setDepth(1100).setInteractive());
 
         // Title
-        const title = this.add.text(1000, 300, 'あつめたひらがな', {
-            fontSize: '80px',
+        track(this.add.text(cw / 2, 38, 'あつめたひらがな', {
+            fontSize: '26px',
             fontFamily: '"Hiragino Maru Gothic ProN"',
             color: '#FFD700',
             stroke: '#000000', strokeThickness: 4
-        })
-            .setOrigin(0.5)
-            .setScrollFactor(0);
-        this.collectionGroup.add(title);
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(1101));
 
-        const data = Utils.getData();
-        const collected = data.collectedHiragana;
-        const uniqueChars = [...new Set(collected)].sort();
+        // Close button
+        const closeBtn = track(this.add.text(cw - 36, 36, '✕', {
+            fontSize: '32px', color: '#ffffff'
+        }).setOrigin(0.5).setInteractive().setScrollFactor(0).setDepth(1101));
+        closeBtn.on('pointerdown', () => this.toggleCollection());
 
-        // Calculate pages
-        const itemsPerPage = 15; // 5 cols x 3 rows
-        const maxPages = Math.ceil(uniqueChars.length / itemsPerPage) || 1;
-        let currentPage = 1;
+        // Tabs: up to 5 per row
+        const maxPerRow = 5;
+        const numTabRows = Math.ceil(modes.length / maxPerRow);
+        const tabH = 40;
+        const tabsTop = 62;
 
-        // Container for grid items to easily swap pages
-        const gridContainer = this.add.container(0, 0).setScrollFactor(0);
-        this.collectionGroup.add(gridContainer);
+        modes.forEach((m, i) => {
+            const row = Math.floor(i / maxPerRow);
+            const col = i % maxPerRow;
+            const modesInRow = Math.min(maxPerRow, modes.length - row * maxPerRow);
+            const tabW = Math.floor(cw / modesInRow);
+            const tx = col * tabW + tabW / 2;
+            const ty = tabsTop + row * (tabH + 3) + tabH / 2;
+            const isActive = m === this.activeCollectionTab;
 
-        const renderPage = (page) => {
-            gridContainer.removeAll(true);
+            const tabBg = track(this.add.rectangle(tx, ty, tabW - 3, tabH - 2,
+                isActive ? 0xFFD700 : 0x333333)
+                .setScrollFactor(0).setDepth(1101).setInteractive()
+                .setStrokeStyle(1, isActive ? 0xFFAA00 : 0x555555));
 
-            // Pagination Controls if needed
-            if (maxPages > 1) {
-                const pageText = this.add.text(1000, 1300, `${page} / ${maxPages}`, { fontSize: '50px', color: '#fff' })
-                    .setOrigin(0.5);
-                gridContainer.add(pageText);
+            track(this.add.text(tx, ty, m, {
+                fontSize: '22px',
+                color: isActive ? '#333' : '#ccc',
+                fontFamily: '"Hiragino Maru Gothic ProN"',
+                fontStyle: isActive ? 'bold' : 'normal'
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(1102));
 
-                if (page > 1) {
-                    const prevBtn = this.add.text(600, 1300, '◀️ まえ', { fontSize: '50px', backgroundColor: '#333', padding: 10 })
-                        .setOrigin(0.5)
-                        .setInteractive();
-                    prevBtn.on('pointerdown', () => renderPage(page - 1));
-                    gridContainer.add(prevBtn);
-                }
-
-                if (page < maxPages) {
-                    const nextBtn = this.add.text(1400, 1300, 'つぎ ▶️', { fontSize: '50px', backgroundColor: '#333', padding: 10 })
-                        .setOrigin(0.5)
-                        .setInteractive();
-                    nextBtn.on('pointerdown', () => renderPage(page + 1));
-                    gridContainer.add(nextBtn);
-                }
-            }
-
-            if (uniqueChars.length === 0) {
-                const emptyTxt = this.add.text(1000, 800, 'まだなにもないよ。\nひらがなさがしにいこう！', {
-                    fontSize: '60px', color: '#fff', align: 'center'
-                }).setOrigin(0.5);
-                gridContainer.add(emptyTxt);
-                return;
-            }
-
-            const startIndex = (page - 1) * itemsPerPage;
-            const endIndex = Math.min(startIndex + itemsPerPage, uniqueChars.length);
-            const pageItems = uniqueChars.slice(startIndex, endIndex);
-
-            const cols = 5;
-            const startX = 400;
-            const startY = 500;
-            const spaX = 300;
-            const spaY = 250;
-
-            pageItems.forEach((char, index) => {
-                const c = index % cols;
-                const r = Math.floor(index / cols);
-
-                const charTxt = this.add.text(startX + c * spaX, startY + r * spaY, char, {
-                    fontSize: '120px',
-                    fontFamily: '"Hiragino Maru Gothic ProN"',
-                    color: '#ffffff',
-                    stroke: '#FFA500', strokeThickness: 6,
-                    shadow: { offsetX: 4, offsetY: 4, color: '#000', blur: 4, stroke: true, fill: true }
-                }).setOrigin(0.5);
-
-                charTxt.setInteractive();
-                charTxt.on('pointerdown', () => {
-                    Utils.speak(char);
-                    window.audioController.playSE('pop');
-                    this.tweens.add({
-                        targets: charTxt,
-                        scale: 1.5,
-                        duration: 100,
-                        yoyo: true
-                    });
-                });
-
-                gridContainer.add(charTxt);
+            tabBg.on('pointerdown', () => {
+                if (m === this.activeCollectionTab) return;
+                this.activeCollectionTab = m;
+                (this._collectionObjs || []).forEach(o => o.destroy());
+                this._collectionObjs = [];
+                this.isCollectionOpen = false;
+                this.toggleCollection();
             });
-        };
+        });
 
-        renderPage(currentPage);
+        // Content area
+        const contentTop = tabsTop + numTabRows * (tabH + 3) + 60;
+        const chars = HIRAGANA_DATA[this.activeCollectionTab] || [];
+        const charSpacing = Math.floor((cw - 40) / chars.length);
+        const fontSize = Math.min(Math.floor(charSpacing * 0.65), 90);
+
+        if (chars.length === 0) {
+            track(this.add.text(cw / 2, contentTop + 80, 'まだもじがないよ', {
+                fontSize: '28px', color: '#888',
+                fontFamily: '"Hiragino Maru Gothic ProN"'
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(1101));
+            return;
+        }
+
+        chars.forEach((item, i) => {
+            const isDone = collected.includes(item.char);
+            const x = 20 + i * charSpacing + charSpacing / 2;
+
+            const txt = track(this.add.text(x, contentTop, isDone ? item.char : '？', {
+                fontSize: fontSize + 'px',
+                fontFamily: '"Hiragino Maru Gothic ProN"',
+                color: isDone ? '#ffffff' : '#555555',
+                stroke: isDone ? '#FFA500' : '#333333',
+                strokeThickness: 5
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(1101));
+
+            track(this.add.text(x, contentTop + fontSize * 0.65, isDone ? item.word : '・・・', {
+                fontSize: Math.max(Math.floor(charSpacing * 0.15), 13) + 'px',
+                fontFamily: '"Hiragino Maru Gothic ProN"',
+                color: isDone ? '#dddddd' : '#444444'
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(1101));
+
+            if (isDone) {
+                txt.setInteractive();
+                txt.on('pointerdown', () => {
+                    Utils.speak(item.word);
+                    window.audioController.playSE('pop');
+                    this.tweens.add({ targets: txt, scale: 1.4, duration: 100, yoyo: true });
+                });
+            }
+        });
     }
 
     createRainbow() {
@@ -1030,32 +1025,99 @@ class HomeScene extends Phaser.Scene {
         }
     }
 
-    createModeSelector(currentMode) {
-        const modes = ['あ', 'か', 'さ', 'た'];
+    createModeBadge(currentMode) {
+        const cfg = MODE_CONFIG[currentMode];
+        const bg = this.add.rectangle(72, 44, 136, 48, 0x222222, 0.88)
+            .setScrollFactor(0).setDepth(1000).setInteractive()
+            .setStrokeStyle(2, 0x888888);
+
+        this.add.text(72, 44, cfg.label + ' ▼', {
+            fontSize: '22px',
+            color: '#ffffff',
+            fontFamily: '"Hiragino Maru Gothic ProN"',
+            fontStyle: 'bold'
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(1001);
+
+        bg.on('pointerdown', () => {
+            this.createModeModal();
+        });
+    }
+
+    createModeModal() {
+        if (this.modeModalOpen) return;
+        this.modeModalOpen = true;
+
+        const cw = this.cameras.main.width;
+        const ch = this.cameras.main.height;
+        const data = Utils.getData();
+        const collected = data.collectedHiragana || [];
+        const modes = Object.keys(MODE_CONFIG);
+        const allObjs = [];
+
+        const track = (obj) => { allObjs.push(obj); return obj; };
+        const closeModal = () => {
+            allObjs.forEach(o => o.destroy());
+            this.modeModalOpen = false;
+        };
+
+        // Overlay
+        track(this.add.rectangle(cw / 2, ch / 2, cw, ch, 0x000000, 0.85)
+            .setScrollFactor(0).setDepth(1100).setInteractive());
+
+        // Title
+        track(this.add.text(cw / 2, 52, 'もじをえらんでね', {
+            fontSize: '28px',
+            color: '#FFD700',
+            fontFamily: '"Hiragino Maru Gothic ProN"',
+            stroke: '#000000', strokeThickness: 4
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(1101));
+
+        // Close button
+        const closeBtn = track(this.add.text(cw - 38, 38, '✕', {
+            fontSize: '30px', color: '#ffffff'
+        }).setOrigin(0.5).setInteractive().setScrollFactor(0).setDepth(1101));
+        closeBtn.on('pointerdown', closeModal);
+
+        // Grid: 2 columns
+        const gap = 10;
+        const cellW = Math.floor((cw - gap * 3) / 2);
+        const cellH = 82;
+        const cellGapY = 8;
+        const gridTop = 86;
 
         modes.forEach((m, i) => {
+            const col = i % 2;
+            const row = Math.floor(i / 2);
+            const cx = gap + col * (cellW + gap) + cellW / 2;
+            const cy = gridTop + row * (cellH + cellGapY) + cellH / 2;
+
             const cfg = MODE_CONFIG[m];
-            const btnX = 80 + i * 125;
-            const btnY = 80;
-            const isActive = m === currentMode;
+            const modeChars = (HIRAGANA_DATA[m] || []).map(h => h.char);
+            const done = modeChars.filter(c => collected.includes(c)).length;
+            const total = modeChars.length;
+            const isActive = data.gameMode === m;
 
-            const bg = this.add.rectangle(btnX, btnY, 108, 54, isActive ? 0xFFD700 : 0x222222, isActive ? 1 : 0.75)
-                .setInteractive()
-                .setScrollFactor(0)
-                .setDepth(1000)
-                .setStrokeStyle(2, isActive ? 0xFFAA00 : 0x888888);
+            const cellBg = track(this.add.rectangle(cx, cy, cellW, cellH,
+                isActive ? 0xFFD700 : 0x333333)
+                .setScrollFactor(0).setDepth(1101).setInteractive()
+                .setStrokeStyle(2, isActive ? 0xFFAA00 : 0x666666));
 
-            this.add.text(btnX, btnY, cfg.label, {
-                fontSize: '26px',
+            track(this.add.text(cx, cy - 16, cfg.label, {
+                fontSize: '24px',
                 color: isActive ? '#333333' : '#ffffff',
                 fontFamily: '"Hiragino Maru Gothic ProN"',
                 fontStyle: isActive ? 'bold' : 'normal'
-            }).setOrigin(0.5).setScrollFactor(0).setDepth(1001);
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(1102));
 
-            bg.on('pointerdown', (p, lx, ly, event) => {
-                event.stopPropagation();
-                if (m === currentMode) return;
+            track(this.add.text(cx, cy + 20, `${done} / ${total}`, {
+                fontSize: '18px',
+                color: isActive ? '#555555' : '#999999'
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(1102));
+
+            cellBg.on('pointerdown', () => {
+                if (isActive) { closeModal(); return; }
                 Utils.saveData('gameMode', m);
+                closeModal();
                 this.cameras.main.fadeOut(400, 255, 255, 255);
                 this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
                     this.scene.restart();
